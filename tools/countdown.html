@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>课堂计时器 | 教师工具站</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../assets/css/theme.css">
   <link rel="stylesheet" href="../assets/css/icons.css">
@@ -11,15 +14,20 @@
   <script src="../assets/js/member.js"></script>
   <script src="../assets/js/component.js"></script>
   <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 40%, #16213e 100%);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
+    /* ── Workspace ── */
     .workspace {
       max-width: 1000px;
       margin: 0 auto;
-      padding: var(--space-5);
+      padding: var(--space-5, 1.5rem);
       min-height: calc(100vh - 57px);
       display: flex;
       flex-direction: column;
@@ -27,194 +35,604 @@
       justify-content: center;
     }
 
+    /* ── Card ── */
     .timer-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius-xl);
-      padding: var(--space-8);
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-xl, 1.5rem);
+      padding: 2rem 2rem 2.5rem;
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
       text-align: center;
-    }
-
-    .timer-display {
-      font-size: 8rem;
-      font-weight: 700;
-      font-family: 'Courier New', monospace;
-      color: #fff;
-      margin: var(--space-6) 0;
-      text-shadow: 0 0 30px rgba(79, 172, 254, 0.5);
-      letter-spacing: 4px;
-    }
-
-    .timer-display.warning {
-      color: #fbbf24;
-      text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
-      animation: pulse 1s infinite;
-    }
-
-    .timer-display.danger {
-      color: #ef4444;
-      text-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
-      animation: pulse 0.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    .progress-ring {
-      margin: var(--space-4) auto;
       position: relative;
-      width: 300px;
-      height: 300px;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
-    .progress-ring svg {
-      transform: rotate(-90deg);
-    }
-
-    .progress-ring .bg {
-      stroke: rgba(255, 255, 255, 0.1);
-    }
-
-    .progress-ring .progress {
-      stroke: #4facfe;
-      transition: stroke-dashoffset 0.3s, stroke 0.3s;
-    }
-
-    .progress-ring .progress.warning { stroke: #fbbf24; }
-    .progress-ring .progress.danger { stroke: #ef4444; }
-
-    .timer-label {
-      font-size: 1.5rem;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: var(--space-4);
-    }
-
-    .controls {
+    /* ── Mode Toggle ── */
+    .mode-toggle-wrap {
       display: flex;
-      gap: var(--space-4);
       justify-content: center;
-      margin: var(--space-6) 0;
+      margin-bottom: 1.25rem;
     }
-
-    .btn-timer {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
+    .mode-toggle {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      user-select: none;
+    }
+    .mode-btn {
+      padding: 0.5rem 1.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.55);
+      background: transparent;
       border: none;
-      font-size: 1.5rem;
       cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      transition: all 0.3s ease;
+      letter-spacing: 0.02em;
+    }
+    .mode-btn.active {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(79, 172, 254, 0.4);
+    }
+    .mode-btn:not(.active):hover {
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.06);
     }
 
-    .btn-start {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: white;
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-    }
-
-    .btn-start:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
-    }
-
-    .btn-pause {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: white;
-      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
-    }
-
-    .btn-reset {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-reset:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
+    /* ── Presets ── */
     .preset-times {
       display: flex;
-      gap: var(--space-3);
+      gap: 0.5rem;
       justify-content: center;
       flex-wrap: wrap;
-      margin-bottom: var(--space-6);
+      margin-bottom: 1rem;
     }
-
     .preset-btn {
-      padding: var(--space-2) var(--space-4);
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: var(--radius-full);
-      color: white;
+      padding: 0.45rem 1rem;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.8);
       cursor: pointer;
-      transition: all var(--transition-fast);
-      font-size: 0.9rem;
+      transition: all 0.25s ease;
+      font-size: 0.85rem;
+      font-weight: 500;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-
     .preset-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #fff;
     }
-
     .preset-btn.active {
-      background: var(--primary);
-      border-color: var(--primary);
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(79, 172, 254, 0.35);
     }
 
+    /* ── Custom Time Input ── */
     .custom-time {
       display: flex;
-      gap: var(--space-2);
+      gap: 0.4rem;
       align-items: center;
       justify-content: center;
-      margin-bottom: var(--space-4);
+      margin-bottom: 1.5rem;
     }
-
-    .custom-time input {
-      width: 60px;
-      padding: var(--space-2);
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: var(--radius);
-      color: white;
+    .custom-time input[type="number"] {
+      width: 56px;
+      padding: 0.45rem 0.3rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 0.6rem;
+      color: #fff;
       text-align: center;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      transition: border-color 0.25s;
+      -moz-appearance: textfield;
     }
-
+    .custom-time input[type="number"]::-webkit-inner-spin-button,
+    .custom-time input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
     .custom-time input:focus {
       outline: none;
-      border-color: var(--primary);
+      border-color: #4facfe;
+      box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
     }
-
-    .custom-time span {
-      color: rgba(255, 255, 255, 0.5);
+    .custom-time .sep {
+      color: rgba(255, 255, 255, 0.4);
       font-size: 1.2rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
     }
-
-    .fullscreen-btn {
-      position: absolute;
-      top: var(--space-4);
-      right: var(--space-4);
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: white;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+    .custom-time .btn-apply {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 0.6rem;
+      color: rgba(255, 255, 255, 0.7);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: all var(--transition-fast);
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-time .btn-apply:hover {
+      background: rgba(79, 172, 254, 0.25);
+      border-color: #4facfe;
+      color: #fff;
     }
 
-    .fullscreen-btn:hover {
+    /* ── Progress Ring ── */
+    .progress-ring-wrap {
+      position: relative;
+      width: min(70vw, 320px);
+      height: min(70vw, 320px);
+      margin: 0 auto 1.5rem;
+    }
+    .progress-ring-wrap svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.07);
+      stroke-width: 8;
+    }
+    .ring-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.04);
+      stroke-width: 8;
+    }
+    .ring-progress {
+      fill: none;
+      stroke: #4facfe;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;
+      filter: drop-shadow(0 0 6px rgba(79, 172, 254, 0.4));
+    }
+    .ring-progress.warning {
+      stroke: #fbbf24;
+      filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4));
+    }
+    .ring-progress.danger {
+      stroke: #ef4444;
+      filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+    }
+    .ring-progress.complete {
+      stroke: #10b981;
+      filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+    }
+
+    /* ── Timer Display (inside ring) ── */
+    .timer-display-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .timer-display {
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: clamp(2.2rem, 10vw, 5rem);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 28px rgba(79, 172, 254, 0.35);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+    .timer-display.warning {
+      color: #fbbf24;
+      text-shadow: 0 0 28px rgba(251, 191, 36, 0.45);
+    }
+    .timer-display.danger {
+      color: #ef4444;
+      text-shadow: 0 0 28px rgba(239, 68, 68, 0.45);
+      animation: pulse-text 0.6s infinite;
+    }
+    .timer-display.complete {
+      color: #10b981;
+      text-shadow: 0 0 28px rgba(16, 185, 129, 0.45);
+    }
+    @keyframes pulse-text {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .timer-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 0.4rem;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .btn-ctrl {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-ctrl:active { transform: scale(0.92); }
+
+    .btn-play {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      font-size: 1.5rem;
+    }
+    .btn-play:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.5);
+    }
+    .btn-play.paused {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    }
+    .btn-play.paused:hover {
+      box-shadow: 0 8px 28px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+
+    /* Play/pause icon morph */
+    .icon-morph {
+      display: inline-block;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-play.paused .icon-morph {
+      transform: rotate(0deg);
+    }
+
+    /* ── Add Time Buttons ── */
+    .add-time-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .btn-add-time {
+      padding: 0.4rem 0.9rem;
+      background: rgba(79, 172, 254, 0.1);
+      border: 1px solid rgba(79, 172, 254, 0.2);
+      border-radius: 999px;
+      color: rgba(79, 172, 254, 0.85);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-add-time:hover {
+      background: rgba(79, 172, 254, 0.2);
+      border-color: rgba(79, 172, 254, 0.4);
+      color: #4facfe;
+    }
+    .btn-add-time:active { transform: scale(0.95); }
+
+    /* ── Bottom bar: sound + volume + fullscreen ── */
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .sound-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .sound-toggle-wrap label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sound-toggle-wrap label:hover { color: rgba(255, 255, 255, 0.85); }
+
+    /* Custom toggle switch */
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      display: inline-block;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(18px);
+    }
+
+    /* Volume slider */
+    .volume-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .volume-wrap i {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.85rem;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #4facfe;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(79, 172, 254, 0.5);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: #4facfe;
+      border-radius: 50%;
+      border: none;
+      box-shadow: 0 0 6px rgba(79, 172, 254, 0.5);
+      cursor: pointer;
+    }
+
+    /* Fullscreen button */
+    .btn-fullscreen {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50%;
+      color: rgba(255, 255, 255, 0.6);
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-size: 0.85rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-fullscreen:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+
+    /* ── Keyboard hint ── */
+    .keyboard-hint {
+      margin-top: 1.5rem;
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 0.75rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .keyboard-hint kbd {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 0.3rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      margin: 0 0.15rem;
+    }
+
+    /* ── Celebration overlay ── */
+    .celebration-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .celebration-overlay.active {
+      opacity: 1;
+    }
+    .celebration-flash {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+      animation: flash-pulse 1.5s ease-in-out 3;
+    }
+    @keyframes flash-pulse {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    .celebration-check {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 120px;
+      height: 120px;
+      animation: check-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards;
+    }
+    @keyframes check-pop {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; }
+      60% { transform: translate(-50%, -50%) scale(1.15) rotate(5deg); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    }
+    .celebration-check svg {
+      width: 100%;
+      height: 100%;
+    }
+    .check-circle {
+      fill: none;
+      stroke: #10b981;
+      stroke-width: 3;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 283;
+      animation: draw-circle 0.6s ease-out 0.3s forwards;
+    }
+    @keyframes draw-circle {
+      to { stroke-dashoffset: 0; }
+    }
+    .check-mark {
+      fill: none;
+      stroke: #10b981;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 60;
+      stroke-dashoffset: 60;
+      animation: draw-check 0.4s ease-out 0.7s forwards;
+    }
+    @keyframes draw-check {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* ── Fullscreen presentation mode ── */
+    body.fullscreen-mode .timer-card {
+      position: fixed;
+      inset: 0;
+      max-width: none;
+      border-radius: 0;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 40%, #16213e 100%);
+      backdrop-filter: none;
+      z-index: 10000;
+      padding: 2rem;
+    }
+    body.fullscreen-mode .timer-card > *:not(.progress-ring-wrap) {
+      display: none;
+    }
+    body.fullscreen-mode .timer-card .progress-ring-wrap {
+      width: min(85vw, 85vh, 600px);
+      height: min(85vw, 85vh, 600px);
+    }
+    body.fullscreen-mode .timer-display {
+      font-size: clamp(3rem, 14vw, 9rem);
+    }
+    body.fullscreen-mode .timer-sub {
+      font-size: clamp(1rem, 2.5vw, 1.6rem);
+    }
+    body.fullscreen-mode .btn-exit-fullscreen {
+      display: flex !important;
+    }
+    .btn-exit-fullscreen {
+      display: none !important;
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 10001;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      color: rgba(255, 255, 255, 0.7);
+      width: 44px;
+      height: 44px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-size: 1rem;
+    }
+    .btn-exit-fullscreen:hover {
       background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .timer-card { padding: 1.25rem 1rem 1.5rem; }
+      .controls { gap: 0.8rem; }
+      .btn-ctrl { width: 50px; height: 50px; font-size: 1.1rem; }
+      .btn-play { width: 60px; height: 60px; font-size: 1.3rem; }
+      .preset-btn { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+      .keyboard-hint { display: none; }
+      .mode-btn { padding: 0.4rem 1rem; font-size: 0.78rem; }
+    }
+    @media (max-width: 380px) {
+      .progress-ring-wrap {
+        width: min(80vw, 240px);
+        height: min(80vw, 240px);
+      }
+      .custom-time input[type="number"] { width: 44px; font-size: 0.95rem; }
     }
   </style>
 </head>
@@ -222,194 +640,548 @@
   <div id="app-navbar"></div>
   <div id="app-modal"></div>
 
+  <!-- Exit fullscreen button (visible only in fullscreen mode) -->
+  <button class="btn-exit-fullscreen" id="btnExitFullscreen" onclick="exitFullscreenMode()" title="退出全屏 (Esc)">
+    <i class="fas fa-compress"></i>
+  </button>
+
+  <!-- Celebration overlay -->
+  <div class="celebration-overlay" id="celebrationOverlay">
+    <div class="celebration-flash"></div>
+    <div class="celebration-check">
+      <svg viewBox="0 0 100 100">
+        <circle class="check-circle" cx="50" cy="50" r="45"/>
+        <polyline class="check-mark" points="30,52 44,66 70,38"/>
+      </svg>
+    </div>
+  </div>
+
   <div class="workspace">
     <div class="timer-card">
-      <div class="timer-label" id="timerLabel">倒计时</div>
-
-      <!-- 预设时间 -->
-      <div class="preset-times">
-        <button class="preset-btn" onclick="setPreset(60)">1分钟</button>
-        <button class="preset-btn" onclick="setPreset(180)">3分钟</button>
-        <button class="preset-btn active" onclick="setPreset(300)">5分钟</button>
-        <button class="preset-btn" onclick="setPreset(600)">10分钟</button>
-        <button class="preset-btn" onclick="setPreset(900)">15分钟</button>
-        <button class="preset-btn" onclick="setPreset(1800)">30分钟</button>
-        <button class="preset-btn" onclick="setPreset(2700)">45分钟</button>
+      <!-- Mode toggle -->
+      <div class="mode-toggle-wrap">
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="countdown" onclick="switchMode('countdown')">倒计时</button>
+          <button class="mode-btn" data-mode="stopwatch" onclick="switchMode('stopwatch')">秒表</button>
+        </div>
       </div>
 
-      <!-- 自定义时间 -->
-      <div class="custom-time">
-        <input type="number" id="customMin" value="5" min="0" max="99" onchange="setCustomTime()">
-        <span>:</span>
-        <input type="number" id="customSec" value="0" min="0" max="59" onchange="setCustomTime()">
-        <button class="btn btn-ghost btn-sm" style="color: rgba(255,255,255,0.7);" onclick="setCustomTime()">
+      <!-- Presets (countdown only) -->
+      <div class="preset-times" id="presetSection">
+        <button class="preset-btn" data-seconds="60" onclick="setPreset(this, 60)">1 分钟</button>
+        <button class="preset-btn" data-seconds="180" onclick="setPreset(this, 180)">3 分钟</button>
+        <button class="preset-btn active" data-seconds="300" onclick="setPreset(this, 300)">5 分钟</button>
+        <button class="preset-btn" data-seconds="600" onclick="setPreset(this, 600)">10 分钟</button>
+        <button class="preset-btn" data-seconds="900" onclick="setPreset(this, 900)">15 分钟</button>
+        <button class="preset-btn" data-seconds="1200" onclick="setPreset(this, 1200)">20 分钟</button>
+        <button class="preset-btn" data-seconds="1800" onclick="setPreset(this, 1800)">30 分钟</button>
+        <button class="preset-btn" data-seconds="2700" onclick="setPreset(this, 2700)">45 分钟</button>
+      </div>
+
+      <!-- Custom time input (countdown only) -->
+      <div class="custom-time" id="customSection">
+        <input type="number" id="customMin" value="5" min="0" max="99" aria-label="分钟">
+        <span class="sep">:</span>
+        <input type="number" id="customSec" value="0" min="0" max="59" aria-label="秒">
+        <button class="btn-apply" onclick="applyCustomTime()" title="确认时间">
           <i class="fas fa-check"></i>
         </button>
       </div>
 
-      <!-- 进度环 -->
-      <div class="progress-ring">
-        <svg width="300" height="300">
-          <circle class="bg" cx="150" cy="150" r="140" fill="none" stroke-width="8"/>
-          <circle class="progress" id="progressCircle" cx="150" cy="150" r="140" fill="none" stroke-width="8"
-                  stroke-dasharray="879.6" stroke-dashoffset="0" stroke-linecap="round"/>
+      <!-- Progress ring -->
+      <div class="progress-ring-wrap">
+        <svg viewBox="0 0 300 300">
+          <circle class="ring-track" cx="150" cy="150" r="135"/>
+          <circle class="ring-progress" id="ringProgress" cx="150" cy="150" r="135"
+                  stroke-dasharray="848.23" stroke-dashoffset="0"/>
         </svg>
-        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+        <div class="timer-display-wrap">
           <div class="timer-display" id="timerDisplay">05:00</div>
+          <div class="timer-sub" id="timerSub">倒计时</div>
         </div>
       </div>
 
-      <!-- 控制按钮 -->
+      <!-- Add time (countdown only) -->
+      <div class="add-time-row" id="addTimeSection">
+        <button class="btn-add-time" onclick="addTime(30)">+30 秒</button>
+        <button class="btn-add-time" onclick="addTime(60)">+1 分钟</button>
+        <button class="btn-add-time" onclick="addTime(300)">+5 分钟</button>
+      </div>
+
+      <!-- Controls -->
       <div class="controls">
-        <button class="btn-timer btn-reset" onclick="resetTimer()">
-          <i class="fas fa-undo"></i>
+        <button class="btn-ctrl btn-secondary" id="btnReset" onclick="resetTimer()" title="重置 (R)">
+          <i class="fas fa-undo-alt"></i>
         </button>
-        <button class="btn-timer btn-start" id="startBtn" onclick="toggleTimer()">
-          <i class="fas fa-play"></i>
+        <button class="btn-ctrl btn-play" id="btnPlay" onclick="toggleTimer()" title="开始/暂停 (Space)">
+          <span class="icon-morph" id="playIcon"><i class="fas fa-play" style="margin-left:3px"></i></span>
         </button>
-        <button class="btn-timer btn-reset" onclick="addTime(60)">
-          <i class="fas fa-plus"></i>
+        <button class="btn-ctrl btn-secondary" id="btnFullscreen" onclick="enterFullscreenMode()" title="全屏 (F)">
+          <i class="fas fa-expand"></i>
         </button>
+      </div>
+
+      <!-- Bottom bar: sound + volume -->
+      <div class="bottom-bar">
+        <div class="sound-toggle-wrap">
+          <label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="soundToggle" checked>
+              <span class="toggle-slider"></span>
+            </span>
+            <span>声音</span>
+          </label>
+        </div>
+        <div class="volume-wrap">
+          <i class="fas fa-volume-down"></i>
+          <input type="range" id="volumeSlider" min="0" max="100" value="60" aria-label="音量">
+          <i class="fas fa-volume-up"></i>
+        </div>
+      </div>
+
+      <!-- Keyboard hints -->
+      <div class="keyboard-hint">
+        <span><kbd>Space</kbd> 开始/暂停</span>
+        <span><kbd>R</kbd> 重置</span>
+        <span><kbd>F</kbd> 全屏</span>
+        <span><kbd>M</kbd> 静音</span>
       </div>
     </div>
   </div>
 
   <script>
-    let totalSeconds = 300;
-    let remainingSeconds = 300;
+    // ═══════════════════════════════════════════════
+    //  State
+    // ═══════════════════════════════════════════════
+    const RING_RADIUS = 135;
+    const CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~848.23
+
+    let mode = 'countdown';        // 'countdown' | 'stopwatch'
+    let totalSeconds = 300;        // countdown total
+    let remainingSeconds = 300;    // countdown remaining
+    let stopwatchSeconds = 0;      // stopwatch elapsed
     let isRunning = false;
     let timerInterval = null;
-    let circumference = 2 * Math.PI * 140;
+    let audioCtx = null;
+    let celebrationTimeout = null;
 
-    function setPreset(seconds) {
+    // ═══════════════════════════════════════════════
+    //  DOM refs
+    // ═══════════════════════════════════════════════
+    const $display     = document.getElementById('timerDisplay');
+    const $sub         = document.getElementById('timerSub');
+    const $ring        = document.getElementById('ringProgress');
+    const $btnPlay     = document.getElementById('btnPlay');
+    const $playIcon    = document.getElementById('playIcon');
+    const $presetSec   = document.getElementById('presetSection');
+    const $customWrap  = document.getElementById('customSection');
+    const $addTimeSec  = document.getElementById('addTimeSection');
+    const $customMin   = document.getElementById('customMin');
+    const $customSec   = document.getElementById('customSec');
+    const $soundToggle = document.getElementById('soundToggle');
+    const $volumeSlider= document.getElementById('volumeSlider');
+    const $celebration = document.getElementById('celebrationOverlay');
+
+    // ═══════════════════════════════════════════════
+    //  Init
+    // ═══════════════════════════════════════════════
+    (function init() {
+      // Restore last used time from localStorage
+      const saved = localStorage.getItem('countdown_last_seconds');
+      if (saved) {
+        const secs = parseInt(saved, 10);
+        if (!isNaN(secs) && secs > 0) {
+          totalSeconds = secs;
+          remainingSeconds = secs;
+          $customMin.value = Math.floor(secs / 60);
+          $customSec.value = secs % 60;
+          // Mark matching preset
+          document.querySelectorAll('.preset-btn').forEach(b => {
+            b.classList.toggle('active', parseInt(b.dataset.seconds) === secs);
+          });
+        }
+      }
+      // Restore volume
+      const savedVol = localStorage.getItem('countdown_volume');
+      if (savedVol !== null) $volumeSlider.value = savedVol;
+
+      updateDisplay();
+      PageComponents.initPage({ title: '课堂计时器', icon: 'fa-stopwatch' });
+    })();
+
+    // ═══════════════════════════════════════════════
+    //  Mode switching
+    // ═══════════════════════════════════════════════
+    function switchMode(m) {
+      if (m === mode) return;
+      // Stop current
+      pauseTimer();
+      mode = m;
+
+      // Toggle UI
+      document.querySelectorAll('.mode-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === m));
+
+      const isCD = m === 'countdown';
+      $presetSec.style.display  = isCD ? '' : 'none';
+      $customWrap.style.display  = isCD ? '' : 'none';
+      $addTimeSec.style.display = isCD ? '' : 'none';
+
+      if (isCD) {
+        remainingSeconds = totalSeconds;
+        stopwatchSeconds = 0;
+      } else {
+        stopwatchSeconds = 0;
+      }
+      updateDisplay();
+    }
+
+    // ═══════════════════════════════════════════════
+    //  Presets
+    // ═══════════════════════════════════════════════
+    function setPreset(btn, seconds) {
+      if (mode !== 'countdown') switchMode('countdown');
+      pauseTimer();
       totalSeconds = seconds;
       remainingSeconds = seconds;
 
-      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
 
-      document.getElementById('customMin').value = Math.floor(seconds / 60);
-      document.getElementById('customSec').value = seconds % 60;
+      $customMin.value = Math.floor(seconds / 60);
+      $customSec.value = seconds % 60;
 
+      localStorage.setItem('countdown_last_seconds', seconds);
       updateDisplay();
     }
 
-    function setCustomTime() {
-      const min = parseInt(document.getElementById('customMin').value) || 0;
-      const sec = parseInt(document.getElementById('customSec').value) || 0;
-      totalSeconds = min * 60 + sec;
-      remainingSeconds = totalSeconds;
+    // ═══════════════════════════════════════════════
+    //  Custom time
+    // ═══════════════════════════════════════════════
+    function applyCustomTime() {
+      if (mode !== 'countdown') switchMode('countdown');
+      const min = Math.max(0, parseInt($customMin.value) || 0);
+      const sec = Math.max(0, Math.min(59, parseInt($customSec.value) || 0));
+      const total = min * 60 + sec;
+      if (total <= 0) return;
 
-      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      pauseTimer();
+      totalSeconds = total;
+      remainingSeconds = total;
+
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      // Highlight matching preset if any
+      document.querySelectorAll('.preset-btn').forEach(b => {
+        if (parseInt(b.dataset.seconds) === total) b.classList.add('active');
+      });
+
+      localStorage.setItem('countdown_last_seconds', total);
       updateDisplay();
     }
 
+    // ═══════════════════════════════════════════════
+    //  Add time
+    // ═══════════════════════════════════════════════
+    function addTime(seconds) {
+      if (mode !== 'countdown') return;
+      totalSeconds += seconds;
+      remainingSeconds += seconds;
+      // Update custom inputs
+      $customMin.value = Math.floor(totalSeconds / 60);
+      $customSec.value = totalSeconds % 60;
+      updateDisplay();
+    }
+
+    // ═══════════════════════════════════════════════
+    //  Timer controls
+    // ═══════════════════════════════════════════════
     function toggleTimer() {
-      if (isRunning) {
-        pauseTimer();
-      } else {
-        startTimer();
-      }
+      isRunning ? pauseTimer() : startTimer();
     }
 
     function startTimer() {
-      if (remainingSeconds <= 0) return;
+      if (mode === 'countdown' && remainingSeconds <= 0) return;
 
       isRunning = true;
-      const btn = document.getElementById('startBtn');
-      btn.innerHTML = '<i class="fas fa-pause"></i>';
-      btn.classList.remove('btn-start');
-      btn.classList.add('btn-pause');
+      updatePlayButton();
 
       timerInterval = setInterval(() => {
-        remainingSeconds--;
-        updateDisplay();
-
-        if (remainingSeconds <= 0) {
-          clearInterval(timerInterval);
-          isRunning = false;
-          btn.innerHTML = '<i class="fas fa-play"></i>';
-          btn.classList.remove('btn-pause');
-          btn.classList.add('btn-start');
-          playAlarm();
+        if (mode === 'countdown') {
+          remainingSeconds--;
+          updateDisplay();
+          if (remainingSeconds <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isRunning = false;
+            updatePlayButton();
+            onCountdownComplete();
+          }
+        } else {
+          stopwatchSeconds++;
+          updateDisplay();
         }
       }, 1000);
     }
 
     function pauseTimer() {
       isRunning = false;
-      clearInterval(timerInterval);
-
-      const btn = document.getElementById('startBtn');
-      btn.innerHTML = '<i class="fas fa-play"></i>';
-      btn.classList.remove('btn-pause');
-      btn.classList.add('btn-start');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      updatePlayButton();
     }
 
     function resetTimer() {
       pauseTimer();
-      remainingSeconds = totalSeconds;
+      hideCelebration();
+      if (mode === 'countdown') {
+        remainingSeconds = totalSeconds;
+      } else {
+        stopwatchSeconds = 0;
+      }
       updateDisplay();
     }
 
-    function addTime(seconds) {
-      totalSeconds += seconds;
-      remainingSeconds += seconds;
-      updateDisplay();
+    // ═══════════════════════════════════════════════
+    //  Play button state
+    // ═══════════════════════════════════════════════
+    function updatePlayButton() {
+      if (isRunning) {
+        $playIcon.innerHTML = '<i class="fas fa-pause"></i>';
+        $btnPlay.classList.add('paused');
+        $btnPlay.title = '暂停 (Space)';
+      } else {
+        $playIcon.innerHTML = '<i class="fas fa-play" style="margin-left:3px"></i>';
+        $btnPlay.classList.remove('paused');
+        $btnPlay.title = '开始 (Space)';
+      }
     }
 
+    // ═══════════════════════════════════════════════
+    //  Display update
+    // ═══════════════════════════════════════════════
     function updateDisplay() {
-      const min = Math.floor(remainingSeconds / 60);
-      const sec = remainingSeconds % 60;
-      const display = document.getElementById('timerDisplay');
-      display.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      let secs, progress;
 
-      // 更新进度环
-      const circle = document.getElementById('progressCircle');
-      const progress = remainingSeconds / totalSeconds;
-      const offset = circumference * (1 - progress);
-      circle.style.strokeDashoffset = offset;
+      if (mode === 'countdown') {
+        secs = Math.max(0, remainingSeconds);
+        progress = totalSeconds > 0 ? remainingSeconds / totalSeconds : 0;
+      } else {
+        secs = stopwatchSeconds;
+        // For stopwatch, ring does a full cycle every 60 seconds
+        progress = (secs % 60) / 60;
+      }
 
-      // 颜色状态
-      display.className = 'timer-display';
-      circle.className = 'progress';
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      $display.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 
-      if (remainingSeconds <= 10 && remainingSeconds > 0) {
-        display.classList.add('danger');
-        circle.classList.add('danger');
-      } else if (remainingSeconds <= 30) {
-        display.classList.add('warning');
-        circle.classList.add('warning');
+      // Ring offset (0 = full, CIRCUMFERENCE = empty)
+      const offset = CIRCUMFERENCE * (1 - progress);
+      $ring.style.strokeDashoffset = offset;
+
+      // Color states
+      $display.className = 'timer-display';
+      $ring.className = 'ring-progress';
+
+      if (mode === 'countdown') {
+        if (remainingSeconds <= 0 && totalSeconds > 0) {
+          $display.classList.add('complete');
+          $ring.classList.add('complete');
+        } else if (remainingSeconds <= 10 && remainingSeconds > 0) {
+          $display.classList.add('danger');
+          $ring.classList.add('danger');
+        } else if (remainingSeconds <= 30 && remainingSeconds > 0) {
+          $display.classList.add('warning');
+          $ring.classList.add('warning');
+        }
+      }
+
+      // Sub label
+      if (mode === 'countdown') {
+        $sub.textContent = '倒计时';
+      } else {
+        $sub.textContent = '秒表';
       }
     }
 
-    function playAlarm() {
-      if (!document.getElementById('soundToggle').checked) return;
+    // ═══════════════════════════════════════════════
+    //  Countdown complete
+    // ═══════════════════════════════════════════════
+    function onCountdownComplete() {
+      playMelody();
+      showCelebration();
+      // Update page title briefly
+      document.title = '⏰ 时间到！| 教师工具站';
+      setTimeout(() => {
+        document.title = '课堂计时器 | 教师工具站';
+      }, 5000);
+    }
 
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // ═══════════════════════════════════════════════
+    //  Celebration
+    // ═══════════════════════════════════════════════
+    function showCelebration() {
+      hideCelebration();
+      $celebration.classList.add('active');
+      // Auto-hide after 4s
+      celebrationTimeout = setTimeout(hideCelebration, 4000);
+    }
 
-      // 播放3声提示音
-      for (let i = 0; i < 3; i++) {
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+    function hideCelebration() {
+      if (celebrationTimeout) {
+        clearTimeout(celebrationTimeout);
+        celebrationTimeout = null;
+      }
+      $celebration.classList.remove('active');
+    }
 
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+    // ═══════════════════════════════════════════════
+    //  Alarm melody (pleasant, not harsh)
+    // ═══════════════════════════════════════════════
+    function playMelody() {
+      if (!$soundToggle.checked) return;
 
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        gainNode.gain.value = 0.3;
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioCtx;
+      const vol = ($volumeSlider.value / 100) * 0.35;
 
-        const startTime = audioCtx.currentTime + i * 0.3;
-        oscillator.start(startTime);
-        oscillator.stop(startTime + 0.2);
+      // Pleasant pentatonic melody: C5 E5 G5 A5 G5 E5
+      const notes = [523.25, 659.25, 783.99, 880.00, 783.99, 659.25];
+      const durations = [0.25, 0.25, 0.25, 0.35, 0.25, 0.4];
+      let time = ctx.currentTime;
+
+      notes.forEach((freq, i) => {
+        // Main tone
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(vol, time + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + durations[i]);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(time);
+        osc.stop(time + durations[i] + 0.05);
+
+        // Soft harmonic
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.value = freq * 2;
+        gain2.gain.setValueAtTime(0, time);
+        gain2.gain.linearRampToValueAtTime(vol * 0.15, time + 0.02);
+        gain2.gain.exponentialRampToValueAtTime(0.001, time + durations[i]);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(time);
+        osc2.stop(time + durations[i] + 0.05);
+
+        time += durations[i] + 0.08;
+      });
+
+      // Second phrase (softer repeat)
+      setTimeout(() => {
+        if (!$soundToggle.checked) return;
+        let t2 = ctx.currentTime;
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, t2);
+          gain.gain.linearRampToValueAtTime(vol * 0.6, t2 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t2 + durations[i]);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t2);
+          osc.stop(t2 + durations[i] + 0.05);
+          t2 += durations[i] + 0.08;
+        });
+      }, 1600);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  Fullscreen presentation mode
+    // ═══════════════════════════════════════════════
+    function enterFullscreenMode() {
+      document.body.classList.add('fullscreen-mode');
+      // Try browser fullscreen too
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
       }
     }
 
-    // 初始化
-    updateDisplay();
+    function exitFullscreenMode() {
+      document.body.classList.remove('fullscreen-mode');
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
 
-    PageComponents.initPage({ title: '课堂计时器', icon: 'fa-stopwatch' });
+    // Listen for Escape key to exit fullscreen
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        document.body.classList.remove('fullscreen-mode');
+      }
+    });
+
+    // ═══════════════════════════════════════════════
+    //  Keyboard shortcuts
+    // ═══════════════════════════════════════════════
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger if user is typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          toggleTimer();
+          break;
+        case 'KeyR':
+          e.preventDefault();
+          resetTimer();
+          break;
+        case 'KeyF':
+          e.preventDefault();
+          if (document.body.classList.contains('fullscreen-mode')) {
+            exitFullscreenMode();
+          } else {
+            enterFullscreenMode();
+          }
+          break;
+        case 'KeyM':
+          e.preventDefault();
+          $soundToggle.checked = !$soundToggle.checked;
+          break;
+        case 'Escape':
+          if (document.body.classList.contains('fullscreen-mode')) {
+            exitFullscreenMode();
+          }
+          break;
+      }
+    });
+
+    // ═══════════════════════════════════════════════
+    //  Volume persistence
+    // ═══════════════════════════════════════════════
+    $volumeSlider.addEventListener('input', () => {
+      localStorage.setItem('countdown_volume', $volumeSlider.value);
+    });
+
+    // ═══════════════════════════════════════════════
+    //  Custom input: Enter key support
+    // ═══════════════════════════════════════════════
+    $customMin.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applyCustomTime();
+    });
+    $customSec.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applyCustomTime();
+    });
   </script>
   <div id="app-footer"></div>
 </body>

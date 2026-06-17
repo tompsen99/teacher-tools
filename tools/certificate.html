@@ -364,6 +364,11 @@
         <div class="panel-title"><i class="fas fa-edit"></i> 奖状信息</div>
 
         <div class="form-group">
+          <label class="form-label">证书标题</label>
+          <input type="text" class="form-input" id="certTitle" placeholder="输入标题" value="荣 誉 证 书" oninput="render()">
+        </div>
+
+        <div class="form-group">
           <label class="form-label">学生姓名</label>
           <input type="text" class="form-input" id="studentName" placeholder="输入姓名" value="张三" oninput="render()">
         </div>
@@ -404,7 +409,8 @@
         </div>
         <div class="form-group">
           <label class="form-label">印章文字</label>
-          <input type="text" class="form-input" id="sealText" value="荣誉证书" oninput="render()">
+          <input type="text" class="form-input" id="sealText" value="荣誉证书" maxlength="4" oninput="onSealTextInput(this)">
+          <div id="sealTextWarning" style="display:none; font-size:0.75rem; color:var(--danger); margin-top:2px;">印章文字最多4个字符</div>
         </div>
         <div class="drag-hint">
           <i class="fas fa-mouse-pointer"></i> 生成后可拖拽印章调整位置
@@ -467,7 +473,7 @@
             <option value="custom">自定义尺寸</option>
           </select>
 
-          <div id="customPaperSize" style="display: none; display: flex; gap: 4px; align-items: center;">
+          <div id="customPaperSize" style="display: none; gap: 4px; align-items: center;">
             <input type="number" class="form-input" id="customWidth" placeholder="宽(mm)" value="297" style="width: 70px; padding: 4px 8px;">
             <span>×</span>
             <input type="number" class="form-input" id="customHeight" placeholder="高(mm)" value="210" style="width: 70px; padding: 4px 8px;">
@@ -660,6 +666,20 @@
     let sealPosition = { x: 0.8, y: 0.75 }; // 相对位置比例
     let isDraggingSeal = false;
 
+    // ================= 确定性随机 =================
+    function seededRandom(seed) {
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) {
+        h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+      }
+      return function() {
+        h = Math.imul(h ^ h >>> 16, 2246822507);
+        h = Math.imul(h ^ h >>> 13, 3266489909);
+        h ^= h >>> 16;
+        return (h >>> 0) / 4294967296;
+      };
+    }
+
     // ================= 初始化 =================
     function init() {
       // 设置默认日期
@@ -696,6 +716,10 @@
       canvas.addEventListener('mousemove', handleMouseMove);
       canvas.addEventListener('mouseup', handleMouseUp);
       canvas.addEventListener('mouseleave', handleMouseUp);
+      // 触摸事件支持
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleMouseUp);
 
       // 纸张选择
       document.getElementById('paperSize').addEventListener('change', function() {
@@ -955,6 +979,31 @@
       canvas.style.cursor = 'default';
     }
 
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / zoom;
+      const y = (touch.clientY - rect.top) / zoom;
+      const sealX = sealPosition.x * canvas.width;
+      const sealY = sealPosition.y * canvas.height;
+      if (Math.abs(x - sealX) < 60 && Math.abs(y - sealY) < 60) {
+        isDraggingSeal = true;
+      }
+    }
+
+    function handleTouchMove(e) {
+      if (!isDraggingSeal) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / zoom;
+      const y = (touch.clientY - rect.top) / zoom;
+      sealPosition.x = Math.max(0.1, Math.min(0.9, x / canvas.width));
+      sealPosition.y = Math.max(0.1, Math.min(0.9, y / canvas.height));
+      render();
+    }
+
     // ================= 随机生成 =================
     function generateRandom() {
       const names = ['张三', '李四', '王五', '赵六', '陈七', '刘八', '周九', '吴十', '林小明', '黄小红'];
@@ -1005,7 +1054,8 @@
       ctx.textBaseline = 'middle';
       ctx.font = `${template.fontStyle} ${W * 0.09}px ${template.titleFont}`;
       ctx.fillStyle = template.titleColor;
-      ctx.fillText('荣 誉 证 书', W / 2, titleY);
+      const certTitle = document.getElementById('certTitle').value || '荣 誉 证 书';
+      ctx.fillText(certTitle, W / 2, titleY);
 
       // 英文副标题
       if (currentTemplate === 'modern') {
@@ -1111,11 +1161,13 @@
 
     function drawConfetti(W, H, template) {
       const colors = ['#FF6B9D', '#FFD93D', '#6BCB77', '#4D96FF', '#FF8A5C'];
+      const name = document.getElementById('studentName').value || '';
+      const rng = seededRandom(name + currentTemplate);
       for (let i = 0; i < 20; i++) {
         ctx.save();
         ctx.fillStyle = colors[i % colors.length] + '40';
-        ctx.translate(Math.random() * W, Math.random() * H);
-        ctx.rotate(Math.random() * Math.PI);
+        ctx.translate(rng() * W, rng() * H);
+        ctx.rotate(rng() * Math.PI);
         ctx.fillRect(-10, -3, 20, 6);
         ctx.restore();
       }
@@ -1226,6 +1278,27 @@
 
     // ================= 文字换行 =================
     function wrapText(ctx, text, maxWidth, x, y, lineHeight) {
+      const paragraphs = text.split('\n');
+      for (let p = 0; p < paragraphs.length; p++) {
+        let line = '';
+        const para = paragraphs[p];
+        for (let i = 0; i < para.length; i++) {
+          const testLine = line + para[i];
+          if (ctx.measureText(testLine).width > maxWidth && line) {
+            ctx.fillText(line, x, y);
+            line = para[i];
+            y += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, x, y);
+        if (p < paragraphs.length - 1) y += lineHeight;
+      }
+    }
+
+    // 旧版wrapText兼容（保留原签名）
+    function _wrapTextLegacy(ctx, text, maxWidth, x, y, lineHeight) {
       let line = '';
       for (let i = 0; i < text.length; i++) {
         const testLine = line + text[i];
@@ -1253,19 +1326,17 @@
       const { jsPDF } = window.jspdf;
       const name = document.getElementById('studentName').value || '奖状';
 
-      // 判断方向
-      const isLandscape = canvas.width > canvas.height;
+      // 根据当前画布尺寸计算PDF尺寸
+      const mmW = Math.round(canvas.width / 3.78);
+      const mmH = Math.round(canvas.height / 3.78);
       const pdf = new jsPDF({
-        orientation: isLandscape ? 'landscape' : 'portrait',
+        orientation: mmW > mmH ? 'landscape' : 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: [mmW, mmH]
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdfW = isLandscape ? 297 : 210;
-      const pdfH = isLandscape ? 210 : 297;
-
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+      pdf.addImage(imgData, 'JPEG', 0, 0, mmW, mmH);
       pdf.save(`奖状_${name}_${Date.now()}.pdf`);
     }
 
@@ -1277,15 +1348,13 @@
       }
 
       const { jsPDF } = window.jspdf;
-      const isLandscape = canvas.width > canvas.height;
+      const mmW = Math.round(canvas.width / 3.78);
+      const mmH = Math.round(canvas.height / 3.78);
       const pdf = new jsPDF({
-        orientation: isLandscape ? 'landscape' : 'portrait',
+        orientation: mmW > mmH ? 'landscape' : 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: [mmW, mmH]
       });
-
-      const pdfW = isLandscape ? 297 : 210;
-      const pdfH = isLandscape ? 210 : 297;
 
       // 显示进度
       const progressBar = document.getElementById('exportProgress');
@@ -1310,7 +1379,7 @@
         // 添加到PDF
         if (i > 0) pdf.addPage();
         const imgData = canvas.toDataURL('image/jpeg', 0.92);
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+        pdf.addImage(imgData, 'JPEG', 0, 0, mmW, mmH);
 
         // 等待一帧
         await new Promise(r => requestAnimationFrame(r));
@@ -1326,6 +1395,17 @@
 
       progressBar.classList.remove('active');
       alert(`成功导出 ${batchData.length} 张奖状！`);
+    }
+
+    // ================= 印章文字校验 =================
+    function onSealTextInput(el) {
+      const warning = document.getElementById('sealTextWarning');
+      if (el.value.length > 4) {
+        el.value = el.value.substring(0, 4);
+        warning.style.display = 'block';
+        setTimeout(() => warning.style.display = 'none', 2000);
+      }
+      render();
     }
 
     // ================= 启动 =================

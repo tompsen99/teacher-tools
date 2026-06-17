@@ -22,7 +22,7 @@ const SITE_CONFIG = {
     }
     // 生产环境 - Cloudflare Workers URL
     // TODO: 部署后替换为实际的 Worker URL
-    return 'https://teacher-tools-api.YOUR-SUBDOMAIN.workers.dev/api';
+    return 'https://teacher-tools-api.yuanxuchen99.workers.dev/api';
   })(),
 
   // 会员类型

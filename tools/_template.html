@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    ============================================================
+    🔧 工具页面模板 - 教师工具站 v2.0
+    ============================================================
+    使用说明：
+    1. 复制本文件，重命名为你的工具名（如 my-tool.html）
+    2. 修改 <title> 和页面标题
+    3. 在 <style> 中添加你的工具样式
+    4. 在 <body> 中构建工具界面
+    5. 在 <script> 中编写工具逻辑
+    6. 在 tools.json 中注册新工具
+    ============================================================
+  -->
+  <title>文字反转器 | 教师工具站</title>
+
+  <!-- ==================== 外部资源引用 ==================== -->
+  <!-- FontAwesome 图标库 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- 主题样式表（颜色、间距、圆角等 CSS 变量） -->
+  <link rel="stylesheet" href="../assets/css/theme.css">
+
+  <!-- 核心 JS 模块（必须按顺序加载） -->
+  <script src="../assets/js/config.js"></script>   <!-- 全局配置（API地址、存储key等） -->
+  <script src="../assets/js/member.js"></script>   <!-- 会员验证模块 -->
+  <script src="../assets/js/component.js"></script> <!-- 共享组件（导航栏、页脚、弹窗） -->
+
+  <!--
+    ==================== 工具专属样式 ====================
+    使用 theme.css 中定义的 CSS 变量保持统一风格：
+    - --primary / --primary-light  主题色
+    - --card / --bg / --bg-secondary  背景色
+    - --text / --text-light / --text-muted  文字色
+    - --border / --border-light  边框色
+    - --space-1 ~ --space-8  间距（4px递增）
+    - --radius / --radius-md / --radius-lg / --radius-xl  圆角
+    - --shadow / --shadow-lg  阴影
+    - --font-sans  字体
+  -->
+  <style>
+    /* ========== 布局：左右分栏（主区域 + 侧边栏） ========== */
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .tool-layout {
+      display: grid;
+      /* 桌面端：左侧主区域占剩余空间，右侧侧边栏固定 300px */
+      grid-template-columns: 1fr 300px;
+      gap: var(--space-5);
+      margin-top: var(--space-5);
+    }
+
+    /* 移动端（768px以下）：改为上下堆叠 */
+    @media (max-width: 768px) {
+      .tool-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ========== 主区域样式 ========== */
+    .main-area textarea {
+      width: 100%;
+      height: 200px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      line-height: 1.8;
+      resize: vertical;
+      font-family: var(--font-sans);
+      transition: border-color 0.2s;
+    }
+
+    .main-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .result-area {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      min-height: 100px;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .result-placeholder {
+      color: var(--text-muted);
+      text-align: center;
+      padding: var(--space-4);
+    }
+
+    /* ========== 侧边栏样式 ========== */
+    .sidebar .card {
+      position: sticky;
+      top: 80px; /* 导航栏高度 + 间距 */
+    }
+
+    /* ========== 操作按钮行 ========== */
+    .action-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin: var(--space-4) 0;
+    }
+
+    /* ========== 会员锁定遮罩（演示用） ========== */
+    .member-lock-overlay {
+      position: relative;
+    }
+
+    .member-lock-overlay .lock-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <!--
+    ==================== 共享组件占位 ====================
+    component.js 会自动往这些 div 注入导航栏、页脚和弹窗。
+    只需保留这三个空 div，无需手动写 HTML。
+  -->
+  <div id="app-navbar"></div> <!-- 导航栏 -->
+  <div id="app-modal"></div>  <!-- 通用弹窗（会员激活等） -->
+
+  <!--
+    ==================== 工具主内容区 ====================
+    .workspace 是页面最外层容器，限制最大宽度并居中。
+  -->
+  <div class="workspace">
+
+    <!-- ===== 页面标题 ===== -->
+    <div class="text-center">
+      <h1>🔄 文字反转器</h1>
+      <p style="color: var(--text-light);">输入文字，一键反转输出</p>
+    </div>
+
+    <!-- ===== 工具主体：左侧主区域 + 右侧侧边栏 ===== -->
+    <div class="tool-layout">
+
+      <!-- ========== 左侧：主操作区域 ========== -->
+      <div class="main-area">
+
+        <!-- 输入区域 -->
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
+            <i class="fas fa-keyboard"></i> 输入文字
+          </label>
+          <textarea id="inputText" placeholder="在这里输入要反转的文字...&#10;例如：你好世界"></textarea>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="reverseText()">
+            <i class="fas fa-exchange-alt"></i> 反转文字
+          </button>
+          <button class="btn btn-secondary" onclick="copyResult()">
+            <i class="fas fa-copy"></i> 复制结果
+          </button>
+          <button class="btn btn-ghost" onclick="clearAll()">
+            <i class="fas fa-trash-alt"></i> 清空
+          </button>
+        </div>
+
+        <!-- 结果展示 -->
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
+            <i class="fas fa-file-alt"></i> 反转结果
+          </label>
+          <div class="result-area" id="resultArea">
+            <div class="result-placeholder">反转后的文字将显示在这里</div>
+          </div>
+        </div>
+
+        <!--
+          ===== 会员专属功能示例：批量反转 =====
+          免费用户点击会弹出升级提示，付费用户正常使用。
+          这里用 MemberManager.isPro 来判断。
+        -->
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-layer-group"></i> 批量反转
+              <!-- 会员标识 -->
+              <span class="badge badge-warning" style="font-size: 0.7rem; margin-left: 8px;">
+                <i class="fas fa-crown"></i> 会员功能
+              </span>
+            </div>
+          </div>
+          <div class="form-group">
+            <textarea id="batchInput" placeholder="每行一条，批量反转...&#10;第一行&#10;第二行&#10;第三行" style="height: 120px;"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="batchReverse()" style="width: 100%;">
+            <i class="fas fa-magic"></i> 批量反转
+          </button>
+          <div id="batchResult" style="margin-top: var(--space-3);"></div>
+        </div>
+      </div>
+
+      <!-- ========== 右侧：侧边栏（设置/说明） ========== -->
+      <div class="sidebar">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-cog"></i> 设置</div>
+          </div>
+
+          <!-- 选项1：是否反转每一行 -->
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="reversePerLine" checked>
+              <label for="reversePerLine">逐行反转</label>
+            </div>
+            <small style="color: var(--text-muted);">取消勾选则整体反转（包含换行符）</small>
+          </div>
+
+          <!-- 选项2：是否忽略空格 -->
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="ignoreSpaces">
+              <label for="ignoreSpaces">去除空格后反转</label>
+            </div>
+          </div>
+
+          <!-- 分割线 -->
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin: var(--space-3) 0;">
+
+          <!-- 使用说明 -->
+          <div style="font-size: 0.85rem; color: var(--text-light); line-height: 1.8;">
+            <p style="font-weight: 600; margin-bottom: 8px;">
+              <i class="fas fa-info-circle"></i> 使用说明
+            </p>
+            <ol style="padding-left: 20px; margin: 0;">
+              <li>在左侧输入框输入文字</li>
+              <li>点击"反转文字"按钮</li>
+              <li>结果将显示在下方</li>
+              <li>可点击"复制结果"复制到剪贴板</li>
+            </ol>
+          </div>
+
+          <!-- 分割线 -->
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin: var(--space-3) 0;">
+
+          <!-- 快捷示例 -->
+          <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 8px;">
+            <i class="fas fa-lightbulb"></i> 快捷示例
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <button class="btn btn-ghost btn-sm" onclick="loadExample('你好世界')">
+              你好世界
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadExample('Hello World')">
+              Hello World
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadExample('教师工具站真好用')">
+              教师工具站真好用
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.tool-layout -->
+  </div><!-- /.workspace -->
+
+  <!-- ==================== 页脚 ==================== -->
+  <div id="app-footer"></div>
+
+  <!--
+    ==================== 工具逻辑 JavaScript ====================
+    所有工具逻辑写在这里。建议结构：
+    1. 全局变量
+    2. 核心功能函数
+    3. UI 辅助函数（复制、清空等）
+    4. 初始化调用
+  -->
+  <script>
+    // ===== 核心功能：反转文字 =====
+    function reverseText() {
+      const input = document.getElementById('inputText').value;
+
+      if (!input.trim()) {
+        showToast('请先输入文字', 'warning');
+        return;
+      }
+
+      const perLine = document.getElementById('reversePerLine').checked;
+      const ignoreSpaces = document.getElementById('ignoreSpaces').checked;
+
+      let text = ignoreSpaces ? input.replace(/\s/g, '') : input;
+      let result;
+
+      if (perLine) {
+        // 逐行反转：每一行独立反转，保持行结构
+        result = text.split('\n').map(line => {
+          // 将字符串转为数组（支持 Unicode），反转，再拼回
+          return [...line].reverse().join('');
+        }).join('\n');
+      } else {
+        // 整体反转：把所有文字当做一个整体反转
+        result = [...text].reverse().join('');
+      }
+
+      // 显示结果
+      document.getElementById('resultArea').textContent = result;
+    }
+
+    // ===== 会员功能：批量反转 =====
+    function batchReverse() {
+      // 检查会员状态（MemberManager 由 member.js 提供）
+      if (!memberManager.isPro) {
+        // 免费用户：弹出升级提示
+        showMemberUpgrade();
+        return;
+      }
+
+      const input = document.getElementById('batchInput').value;
+      if (!input.trim()) {
+        showToast('请输入要批量反转的文字', 'warning');
+        return;
+      }
+
+      const ignoreSpaces = document.getElementById('ignoreSpaces').checked;
+      let text = ignoreSpaces ? input.replace(/\s/g, '') : input;
+
+      const lines = text.split('\n');
+      const results = lines.map(line => [...line].reverse().join(''));
+
+      const container = document.getElementById('batchResult');
+      container.innerHTML = results.map(r =>
+        `<div style="padding: 6px 12px; background: var(--bg); border-radius: var(--radius); margin-bottom: 4px; font-family: monospace;">${escapeHtml(r)}</div>`
+      ).join('');
+    }
+
+    // ===== 辅助功能 =====
+
+    // 复制结果到剪贴板
+    function copyResult() {
+      const text = document.getElementById('resultArea').textContent;
+      if (!text || text.includes('将显示在这里')) {
+        showToast('没有可复制的内容', 'warning');
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('已复制到剪贴板！', 'success');
+      }).catch(() => {
+        showToast('复制失败，请手动选择复制', 'error');
+      });
+    }
+
+    // 清空所有输入和结果
+    function clearAll() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('resultArea').innerHTML =
+        '<div class="result-placeholder">反转后的文字将显示在这里</div>';
+    }
+
+    // 加载示例文字
+    function loadExample(text) {
+      document.getElementById('inputText').value = text;
+      reverseText(); // 自动执行反转
+    }
+
+    // HTML 转义（防止 XSS）
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // 简单的 Toast 提示（如果 component.js 没有提供，可用 alert 替代）
+    function showToast(msg, type) {
+      // 如果 component.js 提供了 showToast，直接使用
+      if (typeof PageComponents !== 'undefined' && PageComponents.showToast) {
+        PageComponents.showToast(msg, type);
+        return;
+      }
+      // 否则用 alert 降级
+      alert(msg);
+    }
+
+    // 弹出会员升级提示
+    function showMemberUpgrade() {
+      if (typeof PageComponents !== 'undefined' && PageComponents.showModal) {
+        PageComponents.showModal({
+          title: '👑 会员专属功能',
+          content: '批量处理是会员专属功能，升级后即可使用。<br><br>会员还可享受更多高级工具和无限制使用。',
+          confirmText: '立即升级',
+          onConfirm: () => {
+            // 跳转到会员页面（根据实际路径调整）
+            window.location.href = '../member.html';
+          }
+        });
+      } else {
+        if (confirm('这是会员专属功能，是否前往升级？')) {
+          window.location.href = '../member.html';
+        }
+      }
+    }
+  </script>
+
+  <!--
+    ==================== 页面初始化 ====================
+    initPage 会：
+    1. 渲染导航栏（根据当前页面高亮对应菜单）
+    2. 渲染页脚
+    3. 初始化会员状态检查
+    参数说明：
+    - title: 页面标题（显示在导航栏面包屑中）
+    - icon:  FontAwesome 图标类名（不带 fa- 前缀会自动补全）
+  -->
+  <script>
+    // 初始化共享组件
+    if (typeof PageComponents !== 'undefined') {
+      PageComponents.initPage({ title: '文字反转器', icon: 'fa-exchange-alt' });
+    }
+
+    // 初始化会员管理器（用于检查 isPro 状态）
+    let memberManager;
+    if (typeof MemberManager !== 'undefined') {
+      memberManager = new MemberManager();
+    } else {
+      // 降级：如果没有 member.js，假装所有人都不是会员
+      memberManager = { isPro: false };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>颜色工具 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+
+    .color-card {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .color-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .color-preview {
+      height: 80px;
+    }
+
+    .color-info {
+      padding: var(--space-2);
+      background: var(--card);
+      text-align: center;
+    }
+
+    .color-hex {
+      font-family: monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .color-name {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    .mixer-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-4);
+      align-items: center;
+      margin: var(--space-4) 0;
+    }
+
+    .mixer-color {
+      text-align: center;
+    }
+
+    .mixer-color .preview {
+      width: 100%;
+      height: 100px;
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+    }
+
+    .gradient-preview {
+      height: 100px;
+      border-radius: var(--radius-md);
+      margin: var(--space-4) 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>🎨 颜色工具</h1>
+      <p style="color: var(--text-light);">颜色选择、转换、调色板</p>
+    </div>
+
+    <!-- 颜色选择器 -->
+    <div class="card" style="margin-top: var(--space-5);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-eye-dropper"></i> 颜色选择器</div>
+      </div>
+      <div style="display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap;">
+        <input type="color" class="form-color" id="colorPicker" value="#6366f1" onchange="updateFromPicker()" style="width: 80px; height: 80px;">
+        <div style="flex: 1;">
+          <div class="form-group">
+            <label class="form-label">HEX</label>
+            <input type="text" class="form-input" id="hexInput" value="#6366f1" onchange="updateFromHex()">
+          </div>
+          <div style="display: flex; gap: var(--space-2);">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">RGB</label>
+              <input type="text" class="form-input" id="rgbInput" readonly>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">HSL</label>
+              <input type="text" class="form-input" id="hslInput" readonly>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 常用颜色 -->
+    <div class="card" style="margin-top: var(--space-4);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-swatchbook"></i> 常用颜色</div>
+      </div>
+      <div class="color-grid" id="commonColors"></div>
+    </div>
+
+    <!-- 渐变色 -->
+    <div class="card" style="margin-top: var(--space-4);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-adjust"></i> 渐变色生成</div>
+      </div>
+      <div style="display: flex; gap: var(--space-4); align-items: center;">
+        <div>
+          <label class="form-label">起始色</label>
+          <input type="color" class="form-color" id="gradientStart" value="#6366f1" onchange="updateGradient()">
+        </div>
+        <div>
+          <label class="form-label">结束色</label>
+          <input type="color" class="form-color" id="gradientEnd" value="#ec4899" onchange="updateGradient()">
+        </div>
+        <div>
+          <label class="form-label">方向</label>
+          <select class="form-select" id="gradientDir" onchange="updateGradient()">
+            <option value="to right">→ 右</option>
+            <option value="to left">← 左</option>
+            <option value="to bottom">↓ 下</option>
+            <option value="to top">↑ 上</option>
+            <option value="135deg">↘ 对角</option>
+          </select>
+        </div>
+      </div>
+      <div class="gradient-preview" id="gradientPreview"></div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary btn-sm" onclick="copyGradient()">复制 CSS</button>
+        <button class="btn btn-secondary btn-sm" onclick="randomGradient()">随机渐变</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 常用颜色
+    const COLORS = [
+      { name: '红色', hex: '#ef4444' },
+      { name: '橙色', hex: '#f97316' },
+      { name: '琥珀', hex: '#f59e0b' },
+      { name: '黄色', hex: '#eab308' },
+      { name: '青柠', hex: '#84cc16' },
+      { name: '绿色', hex: '#22c55e' },
+      { name: '翡翠', hex: '#10b981' },
+      { name: '青色', hex: '#14b8a6' },
+      { name: '天蓝', hex: '#06b6d4' },
+      { name: '蓝色', hex: '#3b82f6' },
+      { name: '靛蓝', hex: '#6366f1' },
+      { name: '紫色', hex: '#8b5cf6' },
+      { name: '紫罗兰', hex: '#a855f7' },
+      { name: '品红', hex: '#d946ef' },
+      { name: '粉色', hex: '#ec4899' },
+      { name: '玫瑰', hex: '#f43f5e' },
+      { name: '石板灰', hex: '#64748b' },
+      { name: '灰色', hex: '#6b7280' },
+      { name: '锌色', hex: '#71717a' },
+      { name: '中性', hex: '#737373' }
+    ];
+
+    // 初始化常用颜色
+    function initColors() {
+      const container = document.getElementById('commonColors');
+      container.innerHTML = COLORS.map(c => `
+        <div class="color-card" onclick="selectColor('${c.hex}')">
+          <div class="color-preview" style="background: ${c.hex};"></div>
+          <div class="color-info">
+            <div class="color-hex">${c.hex}</div>
+            <div class="color-name">${c.name}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectColor(hex) {
+      document.getElementById('colorPicker').value = hex;
+      document.getElementById('hexInput').value = hex;
+      updateFromPicker();
+    }
+
+    function updateFromPicker() {
+      const hex = document.getElementById('colorPicker').value;
+      document.getElementById('hexInput').value = hex;
+      updateColorInfo(hex);
+    }
+
+    function updateFromHex() {
+      const hex = document.getElementById('hexInput').value;
+      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        document.getElementById('colorPicker').value = hex;
+        updateColorInfo(hex);
+      }
+    }
+
+    function updateColorInfo(hex) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+
+      document.getElementById('rgbInput').value = `rgb(${r}, ${g}, ${b})`;
+
+      // RGB to HSL
+      const r1 = r / 255, g1 = g / 255, b1 = b / 255;
+      const max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
+      let h, s, l = (max + min) / 2;
+
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch(max) {
+          case r1: h = ((g1 - b1) / d + (g1 < b1 ? 6 : 0)) / 6; break;
+          case g1: h = ((b1 - r1) / d + 2) / 6; break;
+          case b1: h = ((r1 - g1) / d + 4) / 6; break;
+        }
+      }
+
+      document.getElementById('hslInput').value = `hsl(${Math.round(h*360)}, ${Math.round(s*100)}%, ${Math.round(l*100)}%)`;
+    }
+
+    function updateGradient() {
+      const start = document.getElementById('gradientStart').value;
+      const end = document.getElementById('gradientEnd').value;
+      const dir = document.getElementById('gradientDir').value;
+
+      document.getElementById('gradientPreview').style.background = `linear-gradient(${dir}, ${start}, ${end})`;
+    }
+
+    function copyGradient() {
+      const start = document.getElementById('gradientStart').value;
+      const end = document.getElementById('gradientEnd').value;
+      const dir = document.getElementById('gradientDir').value;
+      const css = `background: linear-gradient(${dir}, ${start}, ${end});`;
+
+      navigator.clipboard.writeText(css).then(() => {
+        alert('已复制 CSS：' + css);
+      });
+    }
+
+    function randomGradient() {
+      const randomColor = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+      document.getElementById('gradientStart').value = randomColor();
+      document.getElementById('gradientEnd').value = randomColor();
+      updateGradient();
+    }
+
+    // 初始化
+    initColors();
+    updateFromPicker();
+    updateGradient();
+  </script>
+  <div id="app-footer"></div>
+  <script>PageComponents.initPage({ title: '颜色工具', icon: 'fa-palette' });</script>
+</body>
+</html>

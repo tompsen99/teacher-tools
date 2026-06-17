@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>奖状批量生成器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .toolbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .canvas-viewport {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: var(--space-4);
+      overflow: auto;
+    }
+
+    .canvas-container {
+      position: relative;
+      box-shadow: var(--shadow-xl);
+      border-radius: 4px;
+      max-width: 100%;
+      transform-origin: top center;
+    }
+
+    #canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      background: white;
+    }
+
+    /* 模板选择 */
+    .template-scroll {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding-bottom: var(--space-2);
+    }
+
+    .template-item {
+      min-width: 70px;
+      padding: var(--space-2) var(--space-3);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+      white-space: nowrap;
+      font-size: 0.8rem;
+    }
+
+    .template-item:hover {
+      border-color: var(--primary);
+    }
+
+    .template-item.active {
+      border-color: var(--primary);
+      background: var(--primary-bg);
+      color: var(--primary);
+    }
+
+    .template-item .icon {
+      font-size: 1.2rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* 年级按钮 */
+    .grade-row {
+      display: flex;
+      gap: var(--space-1);
+      flex-wrap: wrap;
+    }
+
+    .grade-chip {
+      padding: var(--space-1) var(--space-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .grade-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .grade-chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* 奖项标签 */
+    .award-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      margin-top: var(--space-2);
+    }
+
+    .award-chip {
+      padding: 2px var(--space-2);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .award-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .award-chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* 批量列表 */
+    .batch-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+
+    .batch-item {
+      padding: var(--space-2) var(--space-3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .batch-item:last-child {
+      border-bottom: none;
+    }
+
+    .batch-item:hover {
+      background: var(--bg);
+    }
+
+    .batch-item.active {
+      background: var(--primary-bg);
+      color: var(--primary);
+    }
+
+    .batch-item .delete-btn {
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      color: var(--danger);
+      cursor: pointer;
+    }
+
+    .batch-item:hover .delete-btn {
+      opacity: 1;
+    }
+
+    /* 印章拖拽提示 */
+    .drag-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: var(--space-2);
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      text-align: center;
+    }
+
+    /* 缩放控制 */
+    .zoom-control {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--card);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .zoom-control button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .zoom-control button:hover {
+      background: var(--bg-secondary);
+    }
+
+    .zoom-control span {
+      font-size: 0.85rem;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* 纸张选择 */
+    .paper-select {
+      padding: var(--space-1) var(--space-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      background: var(--card);
+    }
+
+    /* 进度条 */
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar.active {
+      display: block;
+    }
+
+    .progress-bar .progress {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 50vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <!-- 主工作区 -->
+  <div class="workspace">
+    <!-- 左侧控制面板 -->
+    <aside class="sidebar">
+
+      <!-- 模板选择 -->
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-palette"></i> 选择模板</div>
+        <div class="template-scroll">
+          <div class="template-item active" data-template="classic-gold" onclick="selectTemplate(this)">
+            <span class="icon">🏆</span>经典金
+          </div>
+          <div class="template-item" data-template="classic-red" onclick="selectTemplate(this)">
+            <span class="icon">🎖️</span>经典红
+          </div>
+          <div class="template-item" data-template="cartoon" onclick="selectTemplate(this)">
+            <span class="icon">🎨</span>卡通
+          </div>
+          <div class="template-item" data-template="chinese" onclick="selectTemplate(this)">
+            <span class="icon">🎋</span>中国风
+          </div>
+          <div class="template-item" data-template="modern" onclick="selectTemplate(this)">
+            <span class="icon">✨</span>现代
+          </div>
+          <div class="template-item" data-template="cute" onclick="selectTemplate(this)">
+            <span class="icon">🌈</span>可爱
+          </div>
+          <div class="template-item" data-template="elegant" onclick="selectTemplate(this)">
+            <span class="icon">👑</span>典雅
+          </div>
+          <div class="template-item" data-template="simple" onclick="selectTemplate(this)">
+            <span class="icon">📄</span>简约
+          </div>
+        </div>
+      </div>
+
+      <!-- 年级预设 -->
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-graduation-cap"></i> 年级</div>
+        <div class="grade-row">
+          <span class="grade-chip" data-grade="1" onclick="selectGrade(this)">一年级</span>
+          <span class="grade-chip" data-grade="2" onclick="selectGrade(this)">二年级</span>
+          <span class="grade-chip" data-grade="3" onclick="selectGrade(this)">三年级</span>
+          <span class="grade-chip" data-grade="4" onclick="selectGrade(this)">四年级</span>
+          <span class="grade-chip" data-grade="5" onclick="selectGrade(this)">五年级</span>
+          <span class="grade-chip" data-grade="6" onclick="selectGrade(this)">六年级</span>
+        </div>
+      </div>
+
+      <!-- 基本信息 -->
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-edit"></i> 奖状信息</div>
+
+        <div class="form-group">
+          <label class="form-label">学生姓名</label>
+          <input type="text" class="form-input" id="studentName" placeholder="输入姓名" value="张三" oninput="render()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">奖项名称</label>
+          <input type="text" class="form-input" id="awardName" placeholder="输入奖项" value="三好学生" oninput="render()">
+          <div class="award-chips" id="awardChips"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">颁奖词</label>
+          <textarea class="form-textarea" id="awardDesc" rows="2" oninput="render()">在本学期表现优异，品学兼优，特发此状，以资鼓励。</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">颁奖单位</label>
+          <input type="text" class="form-input" id="schoolName" placeholder="学校名称" value="阳光小学" oninput="render()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">日期</label>
+          <input type="date" class="form-input" id="awardDate" onchange="render()">
+        </div>
+      </div>
+
+      <!-- 印章设置 -->
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-stamp"></i> 印章设置</div>
+        <div class="form-group">
+          <label class="form-label">印章样式</label>
+          <select class="form-select" id="sealStyle" onchange="render()">
+            <option value="none">无印章</option>
+            <option value="round-red" selected>圆形红章</option>
+            <option value="round-gold">圆形金章</option>
+            <option value="square-red">方形红章</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">印章文字</label>
+          <input type="text" class="form-input" id="sealText" value="荣誉证书" oninput="render()">
+        </div>
+        <div class="drag-hint">
+          <i class="fas fa-mouse-pointer"></i> 生成后可拖拽印章调整位置
+        </div>
+      </div>
+
+      <!-- 校徽 -->
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-school"></i> 校徽（可选）</div>
+        <div class="file-upload-area" id="logoUpload" style="padding: 16px;">
+          <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; color: var(--text-muted);"></i>
+          <p style="font-size: 0.8rem; margin: 8px 0;">点击上传校徽</p>
+          <input type="file" id="logoInput" accept="image/*" style="display: none;">
+        </div>
+        <div id="logoPreview" style="display: none; text-align: center;">
+          <img id="logoImg" style="max-width: 60px; max-height: 60px;">
+          <button class="btn btn-ghost btn-sm" onclick="removeLogo()">
+            <i class="fas fa-trash"></i> 移除
+          </button>
+        </div>
+      </div>
+
+      <!-- 批量导入 -->
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-users"></i> 批量生成</div>
+
+        <div class="file-upload-area" id="excelUpload" style="padding: 12px; margin-bottom: 8px;">
+          <i class="fas fa-file-excel" style="color: var(--success);"></i>
+          <p style="font-size: 0.8rem; margin: 4px 0;">导入 Excel 名单</p>
+          <input type="file" id="excelInput" accept=".xlsx,.xls" style="display: none;">
+        </div>
+
+        <div id="batchInfo" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.85rem;">已导入 <strong id="batchCount">0</strong> 人</span>
+            <button class="btn btn-ghost btn-sm" onclick="clearBatch()">清空</button>
+          </div>
+          <div class="batch-list" id="batchList"></div>
+        </div>
+
+        <div class="progress-bar" id="exportProgress">
+          <div class="progress" id="exportProgressBar"></div>
+        </div>
+
+        <button class="btn btn-success" style="width: 100%; margin-top: 8px;" onclick="exportBatchPdf()">
+          <i class="fas fa-file-pdf"></i> 批量导出 PDF
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- 右侧预览区域 -->
+    <div class="main-area">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="paper-select" id="paperSize" onchange="changePaper()">
+            <option value="a4-landscape">A4 横向 (297×210mm)</option>
+            <option value="a4-portrait">A4 纵向 (210×297mm)</option>
+            <option value="a3-landscape">A3 横向 (420×297mm)</option>
+            <option value="custom">自定义尺寸</option>
+          </select>
+
+          <div id="customPaperSize" style="display: none; display: flex; gap: 4px; align-items: center;">
+            <input type="number" class="form-input" id="customWidth" placeholder="宽(mm)" value="297" style="width: 70px; padding: 4px 8px;">
+            <span>×</span>
+            <input type="number" class="form-input" id="customHeight" placeholder="高(mm)" value="210" style="width: 70px; padding: 4px 8px;">
+            <button class="btn btn-secondary btn-sm" onclick="applyCustomPaper()">应用</button>
+          </div>
+
+          <div class="zoom-control">
+            <button onclick="zoomOut()" title="缩小"><i class="fas fa-minus"></i></button>
+            <span id="zoomLevel">100%</span>
+            <button onclick="zoomIn()" title="放大"><i class="fas fa-plus"></i></button>
+            <button onclick="zoomFit()" title="适应窗口"><i class="fas fa-expand"></i></button>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <button class="btn btn-secondary btn-sm" onclick="generateRandom()">
+            <i class="fas fa-random"></i> 随机
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="exportPng()">
+            <i class="fas fa-image"></i> 导出PNG
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="exportSinglePdf()">
+            <i class="fas fa-file-pdf"></i> 导出PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="canvas-viewport" id="canvasViewport">
+        <div class="canvas-container" id="canvasContainer">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script>
+    initPage({ title: '奖状批量生成器', icon: 'fa-award' });
+
+    // ================= 配置 =================
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 纸张尺寸 (mm -> px @ 96dpi)
+    const PAPER_SIZES = {
+      'a4-landscape': { mmW: 297, mmH: 210, pxW: 1123, pxH: 794 },
+      'a4-portrait': { mmW: 210, mmH: 297, pxW: 794, pxH: 1123 },
+      'a3-landscape': { mmW: 420, mmH: 297, pxW: 1587, pxH: 1123 }
+    };
+
+    // 模板配置
+    const TEMPLATES = {
+      'classic-gold': {
+        name: '经典金色',
+        bg: '#FFFEF5',
+        borderColor: '#D4AF37',
+        borderWidth: 8,
+        innerBorder: true,
+        titleColor: '#B8860B',
+        textColor: '#333',
+        accentColor: '#D4AF37',
+        decorType: 'stars',
+        fontStyle: 'bold',
+        titleFont: 'SimHei',
+        bodyFont: 'KaiTi'
+      },
+      'classic-red': {
+        name: '经典红',
+        bg: '#FFFAF5',
+        borderColor: '#C41E3A',
+        borderWidth: 6,
+        innerBorder: true,
+        titleColor: '#C41E3A',
+        textColor: '#333',
+        accentColor: '#C41E3A',
+        decorType: 'stars',
+        fontStyle: 'bold',
+        titleFont: 'SimHei',
+        bodyFont: 'KaiTi'
+      },
+      'cartoon': {
+        name: '卡通',
+        bg: '#FFF5F5',
+        borderColor: '#FF6B9D',
+        borderWidth: 5,
+        innerBorder: false,
+        titleColor: '#FF4081',
+        textColor: '#555',
+        accentColor: '#FF6B9D',
+        decorType: 'confetti',
+        fontStyle: 'bold',
+        titleFont: 'SimHei',
+        bodyFont: 'Microsoft YaHei'
+      },
+      'chinese': {
+        name: '中国风',
+        bg: '#FFF8F0',
+        borderColor: '#C41E3A',
+        borderWidth: 6,
+        innerBorder: true,
+        titleColor: '#8B0000',
+        textColor: '#333',
+        accentColor: '#C41E3A',
+        decorType: 'clouds',
+        fontStyle: 'bold',
+        titleFont: 'SimSun',
+        bodyFont: 'KaiTi'
+      },
+      'modern': {
+        name: '现代',
+        bg: '#FFFFFF',
+        borderColor: '#6366F1',
+        borderWidth: 3,
+        innerBorder: false,
+        titleColor: '#4F46E5',
+        textColor: '#1F2937',
+        accentColor: '#6366F1',
+        decorType: 'geometric',
+        fontStyle: '600',
+        titleFont: 'Microsoft YaHei',
+        bodyFont: 'Microsoft YaHei'
+      },
+      'cute': {
+        name: '可爱',
+        bg: '#FFF5F9',
+        borderColor: '#EC4899',
+        borderWidth: 4,
+        innerBorder: false,
+        titleColor: '#DB2777',
+        textColor: '#4B5563',
+        accentColor: '#EC4899',
+        decorType: 'hearts',
+        fontStyle: 'bold',
+        titleFont: 'Microsoft YaHei',
+        bodyFont: 'Microsoft YaHei'
+      },
+      'elegant': {
+        name: '典雅',
+        bg: '#FDF8F0',
+        borderColor: '#92400E',
+        borderWidth: 5,
+        innerBorder: true,
+        titleColor: '#78350F',
+        textColor: '#374151',
+        accentColor: '#D97706',
+        decorType: 'laurel',
+        fontStyle: 'bold',
+        titleFont: 'SimSun',
+        bodyFont: 'KaiTi'
+      },
+      'simple': {
+        name: '简约',
+        bg: '#FFFFFF',
+        borderColor: '#374151',
+        borderWidth: 2,
+        innerBorder: false,
+        titleColor: '#111827',
+        textColor: '#374151',
+        accentColor: '#6B7280',
+        decorType: 'none',
+        fontStyle: '600',
+        titleFont: 'Microsoft YaHei',
+        bodyFont: 'Microsoft YaHei'
+      }
+    };
+
+    // 年级奖项
+    const GRADE_AWARDS = {
+      1: ['学习之星', '礼貌之星', '进步之星', '阅读小达人', '书写小能手', '纪律标兵'],
+      2: ['三好学生', '优秀少先队员', '学习标兵', '文明之星', '劳动之星', '才艺之星'],
+      3: ['三好学生', '优秀班干部', '学习进步奖', '数学之星', '语文之星', '英语之星'],
+      4: ['三好学生', '优秀学生干部', '学科之星', '科技创新奖', '体育之星', '艺术之星'],
+      5: ['三好学生', '优秀毕业生', '学习标兵', '综合素质奖', '社会实践奖', '团队之星'],
+      6: ['优秀毕业生', '三好学生', '学习标兵', '优秀班干部', '综合素质奖', '毕业之星']
+    };
+
+    const DEFAULT_AWARDS = ['三好学生', '学习之星', '进步之星', '优秀班干部', '文明之星', '才艺之星'];
+
+    // ================= 状态 =================
+    let currentTemplate = 'classic-gold';
+    let currentPaper = 'a4-landscape';
+    let currentGrade = null;
+    let logoImage = null;
+    let zoom = 1;
+    let batchData = []; // 批量数据 [{name: '张三', award: '三好学生'}, ...]
+    let currentBatchIndex = -1;
+
+    // 印章位置（可拖拽）
+    let sealPosition = { x: 0.8, y: 0.75 }; // 相对位置比例
+    let isDraggingSeal = false;
+
+    // ================= 初始化 =================
+    function init() {
+      // 设置默认日期
+      document.getElementById('awardDate').value = new Date().toISOString().split('T')[0];
+
+      // 初始化画布
+      changePaper();
+
+      // 渲染奖项标签
+      renderAwardChips(DEFAULT_AWARDS);
+
+      // 绑定事件
+      bindEvents();
+
+      // 初始渲染
+      render();
+    }
+
+    function bindEvents() {
+      // 校徽上传
+      document.getElementById('logoInput').addEventListener('change', handleLogoUpload);
+      document.getElementById('logoUpload').addEventListener('click', () => {
+        document.getElementById('logoInput').click();
+      });
+
+      // Excel导入
+      document.getElementById('excelInput').addEventListener('change', handleExcelImport);
+      document.getElementById('excelUpload').addEventListener('click', () => {
+        document.getElementById('excelInput').click();
+      });
+
+      // 印章拖拽
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mousemove', handleMouseMove);
+      canvas.addEventListener('mouseup', handleMouseUp);
+      canvas.addEventListener('mouseleave', handleMouseUp);
+
+      // 纸张选择
+      document.getElementById('paperSize').addEventListener('change', function() {
+        document.getElementById('customPaperSize').style.display =
+          this.value === 'custom' ? 'flex' : 'none';
+      });
+
+      // 窗口大小变化
+      window.addEventListener('resize', () => zoomFit());
+    }
+
+    // ================= 纸张设置 =================
+    function changePaper() {
+      const paperType = document.getElementById('paperSize').value;
+
+      if (paperType === 'custom') {
+        document.getElementById('customPaperSize').style.display = 'flex';
+        applyCustomPaper();
+        return;
+      }
+
+      document.getElementById('customPaperSize').style.display = 'none';
+      currentPaper = paperType;
+
+      const size = PAPER_SIZES[paperType];
+      canvas.width = size.pxW;
+      canvas.height = size.pxH;
+
+      zoomFit();
+      render();
+    }
+
+    function applyCustomPaper() {
+      const mmW = parseInt(document.getElementById('customWidth').value) || 297;
+      const mmH = parseInt(document.getElementById('customHeight').value) || 210;
+
+      canvas.width = Math.round(mmW * 3.78); // mm to px
+      canvas.height = Math.round(mmH * 3.78);
+
+      zoomFit();
+      render();
+    }
+
+    // ================= 缩放控制 =================
+    function zoomIn() {
+      zoom = Math.min(zoom + 0.1, 2);
+      applyZoom();
+    }
+
+    function zoomOut() {
+      zoom = Math.max(zoom - 0.1, 0.3);
+      applyZoom();
+    }
+
+    function zoomFit() {
+      const viewport = document.getElementById('canvasViewport');
+      const vw = viewport.clientWidth - 40;
+      const vh = viewport.clientHeight - 40;
+      const cw = canvas.width;
+      const ch = canvas.height;
+
+      zoom = Math.min(vw / cw, vh / ch, 1);
+      applyZoom();
+    }
+
+    function applyZoom() {
+      const container = document.getElementById('canvasContainer');
+      container.style.transform = `scale(${zoom})`;
+      document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+    }
+
+    // ================= 模板选择 =================
+    function selectTemplate(el) {
+      document.querySelectorAll('.template-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      currentTemplate = el.dataset.template;
+      render();
+    }
+
+    // ================= 年级选择 =================
+    function selectGrade(el) {
+      document.querySelectorAll('.grade-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      currentGrade = parseInt(el.dataset.grade);
+
+      const awards = GRADE_AWARDS[currentGrade] || DEFAULT_AWARDS;
+      renderAwardChips(awards);
+      document.getElementById('awardName').value = awards[0];
+      render();
+    }
+
+    // ================= 奖项标签 =================
+    function renderAwardChips(awards) {
+      const container = document.getElementById('awardChips');
+      container.innerHTML = awards.map(a =>
+        `<span class="award-chip" onclick="selectAwardChip(this, '${a}')">${a}</span>`
+      ).join('');
+    }
+
+    function selectAwardChip(el, award) {
+      document.querySelectorAll('.award-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('awardName').value = award;
+      render();
+    }
+
+    // ================= 校徽处理 =================
+    function handleLogoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.onload = () => {
+        logoImage = img;
+        document.getElementById('logoImg').src = img.src;
+        document.getElementById('logoPreview').style.display = 'block';
+        document.getElementById('logoUpload').style.display = 'none';
+        render();
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    function removeLogo() {
+      logoImage = null;
+      document.getElementById('logoPreview').style.display = 'none';
+      document.getElementById('logoUpload').style.display = 'block';
+      document.getElementById('logoInput').value = '';
+      render();
+    }
+
+    // ================= Excel 导入 =================
+    function handleExcelImport(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          // 解析数据
+          batchData = [];
+          const startRow = jsonData[0] && (jsonData[0][0] === '姓名' || jsonData[0][0] === '名字') ? 1 : 0;
+
+          for (let i = startRow; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (row && row[0]) {
+              batchData.push({
+                name: String(row[0]).trim(),
+                award: row[1] ? String(row[1]).trim() : document.getElementById('awardName').value
+              });
+            }
+          }
+
+          if (batchData.length === 0) {
+            alert('未找到有效数据');
+            return;
+          }
+
+          // 更新UI
+          document.getElementById('batchInfo').style.display = 'block';
+          document.getElementById('batchCount').textContent = batchData.length;
+          renderBatchList();
+
+          // 显示第一个
+          currentBatchIndex = 0;
+          showBatchItem(0);
+
+          alert(`成功导入 ${batchData.length} 名学生`);
+
+        } catch (err) {
+          console.error('Excel导入错误:', err);
+          alert('导入失败，请检查文件格式');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderBatchList() {
+      const list = document.getElementById('batchList');
+      list.innerHTML = batchData.map((item, i) => `
+        <div class="batch-item ${i === currentBatchIndex ? 'active' : ''}" onclick="showBatchItem(${i})">
+          <span>${item.name} - ${item.award}</span>
+          <span class="delete-btn" onclick="event.stopPropagation();removeBatchItem(${i})">
+            <i class="fas fa-times"></i>
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function showBatchItem(index) {
+      currentBatchIndex = index;
+      const item = batchData[index];
+      document.getElementById('studentName').value = item.name;
+      document.getElementById('awardName').value = item.award;
+      renderBatchList();
+      render();
+    }
+
+    function removeBatchItem(index) {
+      batchData.splice(index, 1);
+      if (currentBatchIndex >= batchData.length) {
+        currentBatchIndex = batchData.length - 1;
+      }
+      document.getElementById('batchCount').textContent = batchData.length;
+      if (batchData.length === 0) {
+        document.getElementById('batchInfo').style.display = 'none';
+      }
+      renderBatchList();
+    }
+
+    function clearBatch() {
+      batchData = [];
+      currentBatchIndex = -1;
+      document.getElementById('batchInfo').style.display = 'none';
+      document.getElementById('excelInput').value = '';
+    }
+
+    // ================= 印章拖拽 =================
+    function handleMouseDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / zoom;
+      const y = (e.clientY - rect.top) / zoom;
+
+      // 检查是否点击印章区域
+      const sealX = sealPosition.x * canvas.width;
+      const sealY = sealPosition.y * canvas.height;
+
+      if (Math.abs(x - sealX) < 60 && Math.abs(y - sealY) < 60) {
+        isDraggingSeal = true;
+        canvas.style.cursor = 'grabbing';
+      }
+    }
+
+    function handleMouseMove(e) {
+      if (!isDraggingSeal) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / zoom;
+      const y = (e.clientY - rect.top) / zoom;
+
+      sealPosition.x = x / canvas.width;
+      sealPosition.y = y / canvas.height;
+
+      // 限制范围
+      sealPosition.x = Math.max(0.1, Math.min(0.9, sealPosition.x));
+      sealPosition.y = Math.max(0.1, Math.min(0.9, sealPosition.y));
+
+      render();
+    }
+
+    function handleMouseUp() {
+      isDraggingSeal = false;
+      canvas.style.cursor = 'default';
+    }
+
+    // ================= 随机生成 =================
+    function generateRandom() {
+      const names = ['张三', '李四', '王五', '赵六', '陈七', '刘八', '周九', '吴十', '林小明', '黄小红'];
+      document.getElementById('studentName').value = names[Math.floor(Math.random() * names.length)];
+
+      const awards = currentGrade ? GRADE_AWARDS[currentGrade] : DEFAULT_AWARDS;
+      document.getElementById('awardName').value = awards[Math.floor(Math.random() * awards.length)];
+
+      render();
+    }
+
+    // ================= 主渲染 =================
+    function render() {
+      const W = canvas.width;
+      const H = canvas.height;
+      const template = TEMPLATES[currentTemplate];
+
+      const name = document.getElementById('studentName').value || '某某同学';
+      const award = document.getElementById('awardName').value || '三好学生';
+      const desc = document.getElementById('awardDesc').value || '在本学期表现优异，特发此状，以资鼓励。';
+      const school = document.getElementById('schoolName').value || '某某小学';
+      const date = document.getElementById('awardDate').value;
+      const sealStyle = document.getElementById('sealStyle').value;
+      const sealText = document.getElementById('sealText').value || '荣誉证书';
+
+      // 清空
+      ctx.clearRect(0, 0, W, H);
+
+      // 背景
+      ctx.fillStyle = template.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // 边框
+      drawBorder(W, H, template);
+
+      // 装饰
+      drawDecorations(W, H, template);
+
+      // 校徽
+      if (logoImage) {
+        const logoSize = Math.min(W * 0.1, 120);
+        ctx.drawImage(logoImage, W / 2 - logoSize / 2, H * 0.06, logoSize, logoSize);
+      }
+
+      // 标题
+      const titleY = logoImage ? H * 0.28 : H * 0.18;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${template.fontStyle} ${W * 0.09}px ${template.titleFont}`;
+      ctx.fillStyle = template.titleColor;
+      ctx.fillText('荣 誉 证 书', W / 2, titleY);
+
+      // 英文副标题
+      if (currentTemplate === 'modern') {
+        ctx.font = `300 ${W * 0.025}px Arial`;
+        ctx.fillStyle = template.textColor + '60';
+        ctx.fillText('CERTIFICATE OF HONOR', W / 2, titleY + W * 0.05);
+      }
+
+      // 分隔线
+      const lineY = titleY + W * 0.06;
+      ctx.strokeStyle = template.accentColor + '40';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(W * 0.3, lineY);
+      ctx.lineTo(W * 0.7, lineY);
+      ctx.stroke();
+
+      // 学生姓名
+      const nameY = lineY + H * 0.12;
+      ctx.font = `bold ${W * 0.075}px KaiTi`;
+      ctx.fillStyle = template.titleColor;
+      ctx.fillText(name, W / 2, nameY);
+
+      // 奖项
+      const awardY = nameY + H * 0.1;
+      ctx.font = `bold ${W * 0.055}px ${template.titleFont}`;
+      ctx.fillStyle = template.textColor;
+      ctx.fillText(`荣获 "${award}"`, W / 2, awardY);
+
+      // 颁奖词（自动换行）
+      const descY = awardY + H * 0.1;
+      ctx.font = `${W * 0.028}px ${template.bodyFont}`;
+      ctx.fillStyle = template.textColor + 'CC';
+      wrapText(ctx, desc, W * 0.6, W / 2, descY, W * 0.04);
+
+      // 落款
+      const footerY = H * 0.85;
+      ctx.font = `${W * 0.032}px ${template.bodyFont}`;
+      ctx.fillStyle = template.textColor;
+      ctx.textAlign = 'center';
+      ctx.fillText(school, W * 0.78, footerY);
+
+      if (date) {
+        const dateStr = new Date(date).toLocaleDateString('zh-CN', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        ctx.font = `${W * 0.025}px ${template.bodyFont}`;
+        ctx.fillStyle = template.textColor + 'AA';
+        ctx.fillText(dateStr, W * 0.78, footerY + W * 0.035);
+      }
+
+      // 印章
+      if (sealStyle !== 'none') {
+        drawSeal(W, H, sealStyle, sealText, template);
+      }
+    }
+
+    // ================= 绘制边框 =================
+    function drawBorder(W, H, template) {
+      const bw = template.borderWidth;
+      const margin = W * 0.03;
+
+      ctx.strokeStyle = template.borderColor;
+      ctx.lineWidth = bw;
+      ctx.strokeRect(margin, margin, W - margin * 2, H - margin * 2);
+
+      if (template.innerBorder) {
+        ctx.lineWidth = bw * 0.4;
+        ctx.strokeRect(margin + bw + 4, margin + bw + 4, W - (margin + bw + 4) * 2, H - (margin + bw + 4) * 2);
+      }
+    }
+
+    // ================= 绘制装饰 =================
+    function drawDecorations(W, H, template) {
+      switch (template.decorType) {
+        case 'stars': drawStars(W, H, template); break;
+        case 'confetti': drawConfetti(W, H, template); break;
+        case 'clouds': drawClouds(W, H, template); break;
+        case 'geometric': drawGeometric(W, H, template); break;
+        case 'hearts': drawHearts(W, H, template); break;
+        case 'laurel': drawLaurel(W, H, template); break;
+      }
+    }
+
+    function drawStars(W, H, template) {
+      ctx.fillStyle = template.accentColor + '25';
+      const positions = [
+        [W * 0.08, H * 0.1], [W * 0.92, H * 0.1],
+        [W * 0.08, H * 0.9], [W * 0.92, H * 0.9]
+      ];
+      positions.forEach(([x, y]) => drawStar(x, y, W * 0.025));
+    }
+
+    function drawStar(x, y, size) {
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](x + size * Math.cos(angle), y + size * Math.sin(angle));
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawConfetti(W, H, template) {
+      const colors = ['#FF6B9D', '#FFD93D', '#6BCB77', '#4D96FF', '#FF8A5C'];
+      for (let i = 0; i < 20; i++) {
+        ctx.save();
+        ctx.fillStyle = colors[i % colors.length] + '40';
+        ctx.translate(Math.random() * W, Math.random() * H);
+        ctx.rotate(Math.random() * Math.PI);
+        ctx.fillRect(-10, -3, 20, 6);
+        ctx.restore();
+      }
+    }
+
+    function drawClouds(W, H, template) {
+      ctx.fillStyle = template.accentColor + '10';
+      [[W * 0.12, H * 0.15], [W * 0.88, H * 0.12], [W * 0.15, H * 0.88]].forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.arc(x + 25, y - 8, 16, 0, Math.PI * 2);
+        ctx.arc(x - 18, y - 5, 14, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawGeometric(W, H, template) {
+      ctx.strokeStyle = template.accentColor + '15';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(W * 0.1, H * 0.12, W * 0.05, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeRect(W * 0.85, H * 0.82, W * 0.06, W * 0.06);
+    }
+
+    function drawHearts(W, H, template) {
+      ctx.fillStyle = template.accentColor + '20';
+      [[W * 0.1, H * 0.12], [W * 0.9, H * 0.12], [W * 0.1, H * 0.88], [W * 0.9, H * 0.88]].forEach(([x, y]) => {
+        drawHeart(x, y, W * 0.02);
+      });
+    }
+
+    function drawHeart(x, y, size) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + size * 0.4);
+      ctx.bezierCurveTo(x, y, x - size, y, x - size, y + size * 0.4);
+      ctx.bezierCurveTo(x - size, y + size * 0.8, x, y + size, x, y + size * 1.2);
+      ctx.bezierCurveTo(x, y + size, x + size, y + size * 0.8, x + size, y + size * 0.4);
+      ctx.bezierCurveTo(x + size, y, x, y, x, y + size * 0.4);
+      ctx.fill();
+    }
+
+    function drawLaurel(W, H, template) {
+      ctx.fillStyle = template.accentColor + '20';
+      // 简化的月桂叶
+      [[W * 0.08, H * 0.4, 1], [W * 0.92, H * 0.4, -1]].forEach(([x, y, dir]) => {
+        for (let i = 0; i < 5; i++) {
+          ctx.save();
+          ctx.translate(x, y + i * 25);
+          ctx.scale(dir, 1);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 15, 8, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+    }
+
+    // ================= 绘制印章 =================
+    function drawSeal(W, H, style, text, template) {
+      const x = sealPosition.x * W;
+      const y = sealPosition.y * H;
+      const size = W * 0.08;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.15);
+
+      if (style === 'round-red' || style === 'round-gold') {
+        const color = style === 'round-red' ? '#C41E3A' : '#D4AF37';
+
+        // 圆形
+        ctx.strokeStyle = color + '80';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 五角星
+        ctx.fillStyle = color + '50';
+        drawStar(0, 0, size * 0.4);
+
+        // 文字
+        ctx.font = `bold ${size * 0.3}px SimHei`;
+        ctx.fillStyle = color + '80';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text.substring(0, 2), 0, -size * 0.65);
+        ctx.fillText(text.substring(2, 4) || '之印', 0, size * 0.65);
+
+      } else if (style === 'square-red') {
+        const color = '#C41E3A';
+        const half = size * 0.9;
+
+        ctx.strokeStyle = color + '80';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(-half, -half, half * 2, half * 2);
+
+        ctx.font = `bold ${size * 0.35}px SimHei`;
+        ctx.fillStyle = color + '80';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 0, 0);
+      }
+
+      ctx.restore();
+    }
+
+    // ================= 文字换行 =================
+    function wrapText(ctx, text, maxWidth, x, y, lineHeight) {
+      let line = '';
+      for (let i = 0; i < text.length; i++) {
+        const testLine = line + text[i];
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+          ctx.fillText(line, x, y);
+          line = text[i];
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, y);
+    }
+
+    // ================= 导出功能 =================
+    function exportPng() {
+      const name = document.getElementById('studentName').value || '奖状';
+      const link = document.createElement('a');
+      link.download = `奖状_${name}_${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function exportSinglePdf() {
+      const { jsPDF } = window.jspdf;
+      const name = document.getElementById('studentName').value || '奖状';
+
+      // 判断方向
+      const isLandscape = canvas.width > canvas.height;
+      const pdf = new jsPDF({
+        orientation: isLandscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdfW = isLandscape ? 297 : 210;
+      const pdfH = isLandscape ? 210 : 297;
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+      pdf.save(`奖状_${name}_${Date.now()}.pdf`);
+    }
+
+    // ================= 批量导出 PDF =================
+    async function exportBatchPdf() {
+      if (batchData.length === 0) {
+        alert('请先导入学生名单');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const isLandscape = canvas.width > canvas.height;
+      const pdf = new jsPDF({
+        orientation: isLandscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfW = isLandscape ? 297 : 210;
+      const pdfH = isLandscape ? 210 : 297;
+
+      // 显示进度
+      const progressBar = document.getElementById('exportProgress');
+      const progressEl = document.getElementById('exportProgressBar');
+      progressBar.classList.add('active');
+
+      const prevName = document.getElementById('studentName').value;
+      const prevAward = document.getElementById('awardName').value;
+
+      for (let i = 0; i < batchData.length; i++) {
+        // 更新进度
+        progressEl.style.width = ((i + 1) / batchData.length * 100) + '%';
+
+        // 设置数据
+        document.getElementById('studentName').value = batchData[i].name;
+        document.getElementById('awardName').value = batchData[i].award;
+        currentBatchIndex = i;
+
+        // 渲染
+        render();
+
+        // 添加到PDF
+        if (i > 0) pdf.addPage();
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+
+        // 等待一帧
+        await new Promise(r => requestAnimationFrame(r));
+      }
+
+      // 恢复
+      document.getElementById('studentName').value = prevName;
+      document.getElementById('awardName').value = prevAward;
+      render();
+
+      // 保存
+      pdf.save(`奖状批量_${batchData.length}人_${Date.now()}.pdf`);
+
+      progressBar.classList.remove('active');
+      alert(`成功导出 ${batchData.length} 张奖状！`);
+    }
+
+    // ================= 启动 =================
+    init();
+  </script>
+</body>
+</html>

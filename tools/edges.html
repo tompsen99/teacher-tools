@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>多边形边长与内角和 - 互动课件</title>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; background: #f8f9fa; overflow: hidden; }
+    
+    #toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      padding: 10px 20px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      min-height: 110px; z-index: 10; position: relative;
+    }
+    .left-section { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    
+    .polygon-nav { display: flex; gap: 8px; align-items: center; }
+    .nav-btn {
+      padding: 6px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;
+      cursor: pointer; background: #fff; color: #555; transition: .2s; font-weight: 500;
+    }
+    .nav-btn.active { background: #1976d2; color: #fff; border-color: #1976d2; }
+    .nav-btn:hover:not(.active) { border-color: #90caf9; background: #e3f2fd; }
+    .nav-title { font-size: 15px; font-weight: bold; color: #333; margin-right: 8px; }
+
+    .data-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .card {
+      padding: 5px 12px; border-radius: 8px; background: #f5f5f5; font-size: 15px;
+      font-weight: 600; display: flex; align-items: center; gap: 6px; min-width: 80px;
+      border-left: 4px solid;
+    }
+    .card.side { background: #f8f9fa; }
+    .card.angle { background: #f1f5f9; border-left-width: 5px; }
+
+    .right-section { display: flex; align-items: center; gap: 12px; }
+    .sum-display { font-size: 17px; font-weight: bold; color: #7b1fa2; display: none; margin-right: 10px; }
+    .btn-action {
+      padding: 8px 14px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
+      background: #e3f2fd; color: #1565c0; font-weight: 500; transition: .2s;
+    }
+    .btn-action:hover { background: #bbdefb; }
+
+    .switch { position: relative; display: inline-block; width: 48px; height: 26px; cursor: pointer; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 26px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    input:checked + .slider { background-color: #4CAF50; }
+    input:checked + .slider:before { transform: translateX(22px); }
+    .toggle-label { font-weight: 500; color: #333; }
+
+    #canvas { display: block; width: 100%; height: calc(100vh - 110px); cursor: crosshair; touch-action: none; }
+    
+    .hint { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); color: #555; font-size: 15px; background: rgba(255,255,255,0.9); padding: 8px 16px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); pointer-events: none; }
+    .invalid-msg {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #ffebee; color: #c62828; padding: 14px 28px; border-radius: 12px;
+      font-size: 22px; font-weight: bold; border: 2px solid #c62828; display: none;
+      box-shadow: 0 6px 20px rgba(198,40,40,0.3); z-index: 20;
+    }
+
+    /* 弹窗 */
+    #modalOverlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4); z-index: 100; justify-content: center; align-items: center;
+    }
+    .modal-box {
+      background: #fff; padding: 24px; border-radius: 16px; width: 92%; max-width: 440px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 16px; text-align: center; color: #333; }
+    .input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .input-group { display: flex; flex-direction: column; gap: 4px; }
+    .input-group label { font-size: 13px; color: #666; font-weight: 500; }
+    .input-group input {
+      padding: 10px; border: 2px solid #ddd; border-radius: 8px;
+      font-size: 16px; text-align: center; user-select: text; -webkit-user-select: text;
+      transition: .2s; width: 100%;
+    }
+    .input-group input:focus { border-color: #1976d2; outline: none; }
+    .preset-title { font-size: 13px; color: #777; margin: 12px 0 10px; text-align: center; border-top: 1px dashed #ddd; padding-top: 12px; }
+    .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+    .preset-btn {
+      padding: 10px; border: 1px solid #e0e0e0; background: #fafafa; border-radius: 8px;
+      font-size: 14px; cursor: pointer; transition: .2s;
+    }
+    .preset-btn:hover { background: #e3f2fd; border-color: #90caf9; }
+    .preset-btn:active { transform: scale(0.95); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: 500; cursor: pointer; border: none; }
+    .btn-cancel { background: #f5f5f5; color: #666; }
+    .btn-apply { background: #1976d2; color: #fff; }
+    .btn-apply:hover { background: #1565c0; }
+    #sideError { color: #c62828; margin-top: 10px; text-align: center; font-size: 14px; display: none; min-height: 20px; }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+  <div id="toolbar">
+    <div class="left-section">
+      <div class="polygon-nav">
+        <span class="nav-title">图形切换：</span>
+        <button class="nav-btn active" data-n="3">△ 三角形</button>
+        <button class="nav-btn" data-n="4">□ 四边形</button>
+        <button class="nav-btn" data-n="5">⬠ 五边形</button>
+        <button class="nav-btn" data-n="6">⬡ 六边形</button>
+      </div>
+      <div>
+        <div id="sideRow" class="data-row"></div>
+        <div id="angleRow" class="data-row" style="margin-top: 4px;"></div>
+      </div>
+    </div>
+    <div class="right-section">
+      <div id="sumDisplay" class="sum-display">内角和: <span id="sumVal">180</span>°</div>
+      <label class="switch">
+        <input type="checkbox" id="angleToggle">
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">显示内角</span>
+      <button class="btn-action" id="btnOpenSettings">📐 设定边长</button>
+	    <button class="btn-action" onclick="window.location.href='三角形构筑s.html'" 
+         >🧩 三角形构筑</button>
+    </div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  <div class="hint">👆 拖拽任意顶点可改变形状，实时观察边长与角度变化</div>
+  <div class="invalid-msg" id="invalidMsg">⚠️ 最长边 ≥ 其余边之和，无法构成多边形！</div>
+
+  <div id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-title" id="modalTitle">设定三角形边长 (cm)</div>
+      <div id="inputContainer" class="input-grid"></div>
+      <div class="preset-title">快捷预设 (单位: cm)</div>
+      <div id="presetContainer" class="preset-grid"></div>
+      <div class="modal-actions">
+        <button class="modal-btn btn-cancel" id="btnCancel">取消</button>
+        <button class="modal-btn btn-apply" id="btnApply">✅ 应用并居中</button>
+      </div>
+      <div id="sideError"></div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const sideRow = document.getElementById('sideRow');
+    const angleRow = document.getElementById('angleRow');
+    const sumDisplay = document.getElementById('sumDisplay');
+    const sumVal = document.getElementById('sumVal');
+    const invalidMsg = document.getElementById('invalidMsg');
+    const modal = document.getElementById('modalOverlay');
+    const sideError = document.getElementById('sideError');
+    const modalTitle = document.getElementById('modalTitle');
+    const inputContainer = document.getElementById('inputContainer');
+    const presetContainer = document.getElementById('presetContainer');
+
+    let width, height, dpr;
+    const SCALE = 50; 
+    let N = 3; // 多边形边数
+    let pts = []; 
+    let draggingIndex = -1;
+    let showAngles = false;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    // 预设库
+    const presets = {
+      3: [
+        {label:'等边', vals:[10,10,10]}, {label:'直角 3-4-5', vals:[3,4,5]}, 
+        {label:'直角 5-12-13', vals:[5,12,13]}, {label:'等腰', vals:[8,8,6]},
+        {label:'锐角', vals:[5,6,7]}, {label:'钝角', vals:[4,5,8]}
+      ],
+      4: [
+        {label:'正方形', vals:[8,8,8,8]}, {label:'长方形', vals:[10,6,10,6]}, 
+        {label:'菱形', vals:[8,8,8,8]}, {label:'平行四边形', vals:[10,7,10,7]}
+      ],
+      5: [
+        {label:'正五边形', vals:[6,6,6,6,6]}, {label:'不规则五边形', vals:[5,7,6,8,5]}, 
+        {label:'房屋形', vals:[8,6,8,6,6]}
+      ],
+      6: [
+        {label:'正六边形', vals:[6,6,6,6,6,6]}, {label:'不规则六边形', vals:[5,6,5,7,6,5]}
+      ]
+    };
+
+    function getAngleColor(index, total) {
+      const hue = (index * 360 / total) % 360;
+      return `hsl(${hue}, 65%, 55%)`;
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight - 110;
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      if (pts.length === 0 || pts.some(p => p.x<0||p.x>width||p.y<0||p.y>height)) {
+        initPolygon(N);
+      }
+      draw();
+    }
+    window.addEventListener('resize', resize);
+
+    function initPolygon(n, customSides = null) {
+      N = n;
+      pts = [];
+      if (customSides && customSides.length === n) {
+        buildPolygonFromSides(customSides);
+      } else {
+        buildRegularPolygon(n);
+      }
+      updateUI();
+      draw();
+    }
+
+    function buildRegularPolygon(n) {
+      const cx = width/2, cy = height/2;
+      const r = Math.min(width, height) * 0.3;
+      for(let i=0; i<n; i++) {
+        const angle = (2*Math.PI*i/n) - Math.PI/2;
+        pts.push({x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle)});
+      }
+    }
+
+    // 根据边长构建多边形（三角形精确计算，其他用正多边形拉伸近似）
+    function buildPolygonFromSides(sides) {
+      const n = sides.length;
+      const pxSides = sides.map(s => s * SCALE);
+      
+      if (n === 3) {
+        const [a,b,c] = pxSides;
+        pts[0] = {x:0, y:0};
+        pts[1] = {x:c, y:0};
+        const x = (b*b + c*c - a*a)/(2*c);
+        const y = Math.sqrt(Math.max(0, b*b - x*x));
+        pts[2] = {x:x, y:y};
+      } else {
+        // n>3: 生成正多边形基础，按边长比例调整半径
+        const avgSide = pxSides.reduce((a,b)=>a+b,0)/n;
+        const r = avgSide / (2 * Math.sin(Math.PI/n));
+        const cx = 0, cy = 0;
+        pts = [];
+        for(let i=0; i<n; i++) {
+          const angle = (2*Math.PI*i/n) - Math.PI/2;
+          pts.push({x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle)});
+        }
+        // 微调：让第一条边匹配输入长度
+        const scale = pxSides[0] / dist(pts[0], pts[1]);
+        pts.forEach(p => { p.x *= scale; p.y *= scale; });
+      }
+      
+      // 居中
+      let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+      pts.forEach(p => { minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
+      const offX = width/2 - (minX+maxX)/2;
+      const offY = height/2 - (minY+maxY)/2;
+      pts.forEach(p => { p.x += offX; p.y += offY; });
+    }
+
+    function dist(p1, p2) { return Math.hypot(p1.x - p2.x, p1.y - p2.y); }
+
+    function isValidPolygon() {
+      if (pts.length < 3) return false;
+      const sides = [];
+      for(let i=0; i<N; i++) sides.push(dist(pts[i], pts[(i+1)%N]));
+      const max = Math.max(...sides);
+      const sum = sides.reduce((a,b)=>a+b,0);
+      return (sum - max) > max + 1; // 留1px容差
+    }
+
+    function getInteriorAngle(index) {
+      const n = pts.length;
+      const prev = pts[(index - 1 + n) % n];
+      const curr = pts[index];
+      const next = pts[(index + 1) % n];
+      
+      const v1 = {x: prev.x - curr.x, y: prev.y - curr.y};
+      const v2 = {x: next.x - curr.x, y: next.y - curr.y};
+      
+      let dot = v1.x*v2.x + v1.y*v2.y;
+      let cross = v1.x*v2.y - v1.y*v2.x;
+      let angle = Math.atan2(Math.abs(cross), dot);
+      return angle * 180 / Math.PI;
+    }
+
+    function updateUI() {
+      sideRow.innerHTML = '';
+      angleRow.innerHTML = '';
+      for(let i=0; i<N; i++) {
+        const col = getAngleColor(i, N);
+        const len = dist(pts[i], pts[(i+1)%N]) / SCALE;
+        sideRow.innerHTML += `<div class="card side" style="border-color:${col}">边${letters[i]}: <span id="len${i}">${len.toFixed(1)}</span> cm</div>`;
+        
+        if (showAngles && isValidPolygon()) {
+          const deg = getInteriorAngle(i);
+          angleRow.innerHTML += `<div class="card angle" style="border-color:${col}">∠${letters[i]}: <span id="ang${i}">${deg.toFixed(1)}</span>°</div>`;
+        } else if (!showAngles) {
+          angleRow.innerHTML = '';
+        } else {
+          angleRow.innerHTML = `<div class="card angle" style="border-color:#ccc; color:#888; border-left-color:#888;">当前无法构成有效多边形</div>`;
+          angleRow.innerHTML += '';
+        }
+      }
+      if (showAngles && isValidPolygon()) {
+        sumDisplay.style.display = 'block';
+        sumVal.textContent = (N-2)*180;
+      } else {
+        sumDisplay.style.display = 'none';
+      }
+      invalidMsg.style.display = isValidPolygon() ? 'none' : 'block';
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      drawGrid();
+      
+      const valid = isValidPolygon();
+      
+      // 绘制边
+      ctx.lineWidth = valid ? 4 : 3;
+      ctx.lineJoin = 'round';
+      ctx.setLineDash(valid ? [] : [8,6]);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for(let i=1; i<N; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+      ctx.strokeStyle = valid ? '#333' : '#999';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 绘制角度弧线
+      if (showAngles && valid) {
+        for(let i=0; i<N; i++) {
+          const deg = getInteriorAngle(i);
+          drawAngleArc(pts[(i-1+N)%N], pts[i], pts[(i+1)%N], 35, getAngleColor(i,N), deg, letters[i]);
+        }
+      }
+
+      // 绘制顶点
+      for(let i=0; i<N; i++) {
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y, 16, 0, Math.PI*2);
+        ctx.fillStyle = draggingIndex === i ? '#ff9800' : getAngleColor(i,N);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+        ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 3;
+        ctx.stroke();
+        ctx.shadowColor = 'transparent';
+        
+        // 顶点字母
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px "Microsoft YaHei"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(letters[i], pts[i].x, pts[i].y);
+      }
+
+      updateUI();
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = '#e8e8e8';
+      ctx.lineWidth = 1;
+      const step = 40;
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+      for (let y = 0; y <= height; y += step) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+      ctx.stroke();
+    }
+
+    function drawAngleArc(p1, v, p2, r, color, deg, label) {
+      let a1 = Math.atan2(p1.y - v.y, p1.x - v.x);
+      let a2 = Math.atan2(p2.y - v.y, p2.x - v.x);
+      let diff = a2 - a1;
+      while (diff > Math.PI) diff -= 2*Math.PI;
+      while (diff < -Math.PI) diff += 2*Math.PI;
+      const anticlockwise = diff < 0;
+      
+      ctx.beginPath();
+      ctx.arc(v.x, v.y, r, a1, a1 + Math.abs(diff), anticlockwise);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      
+      // 度数标签
+      let midAng = a1 + diff/2;
+      ctx.fillStyle = color;
+      ctx.font = 'bold 14px "Microsoft YaHei"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(deg.toFixed(1)+'°', v.x + (r+22)*Math.cos(midAng), v.y + (r+22)*Math.sin(midAng));
+    }
+
+    // ================= 交互 =================
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      for(let i=0; i<N; i++) {
+        if (Math.hypot(pts[i].x - mx, pts[i].y - my) < 28) {
+          draggingIndex = i;
+          canvas.setPointerCapture(e.pointerId);
+          return;
+        }
+      }
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (draggingIndex === -1) return;
+      const rect = canvas.getBoundingClientRect();
+      let nx = e.clientX - rect.left;
+      let ny = e.clientY - rect.top;
+      nx = Math.max(15, Math.min(width-15, nx));
+      ny = Math.max(15, Math.min(height-15, ny));
+      pts[draggingIndex].x = nx;
+      pts[draggingIndex].y = ny;
+      draw();
+    });
+    canvas.addEventListener('pointerup', () => { draggingIndex = -1; });
+    canvas.addEventListener('pointercancel', () => { draggingIndex = -1; });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const n = parseInt(btn.dataset.n);
+        initPolygon(n);
+      });
+    });
+
+    document.getElementById('angleToggle').addEventListener('change', (e) => {
+      showAngles = e.target.checked;
+      draw();
+    });
+
+    // ================= 弹窗逻辑 =================
+    document.getElementById('btnOpenSettings').addEventListener('click', () => {
+      openSettingsModal();
+    });
+    document.getElementById('btnCancel').addEventListener('click', () => {
+      modal.style.display = 'none';
+      sideError.style.display = 'none';
+    });
+    modal.addEventListener('click', (e) => { if(e.target===modal) { modal.style.display='none'; sideError.style.display='none'; }});
+
+    function openSettingsModal() {
+      modalTitle.textContent = `设定${['三角形','四边形','五边形','六边形'][N-3]}边长 (cm)`;
+      inputContainer.innerHTML = '';
+      for(let i=0; i<N; i++) {
+        inputContainer.innerHTML += `<div class="input-group"><label>边${letters[i]}</label><input type="number" step="0.1" id="setSide${i}" value="8"></div>`;
+      }
+      
+      presetContainer.innerHTML = '';
+      presets[N].forEach(p => {
+        presetContainer.innerHTML += `<button class="preset-btn" onclick="applyPreset(${JSON.stringify(p.vals)})">${p.label}</button>`;
+      });
+      modal.style.display = 'flex';
+    }
+
+    window.applyPreset = function(vals) {
+      const inputs = inputContainer.querySelectorAll('input');
+      vals.forEach((v,i) => inputs[i].value = v);
+      applySettings();
+    };
+
+    document.getElementById('btnApply').addEventListener('click', applySettings);
+
+    function applySettings() {
+      const sides = [];
+      for(let i=0; i<N; i++) {
+        const v = parseFloat(document.getElementById(`setSide${i}`).value);
+        if (isNaN(v) || v<=0) { showErr("请输入有效的正数"); return; }
+        sides.push(v);
+      }
+      
+      const max = Math.max(...sides);
+      const sum = sides.reduce((a,b)=>a+b,0);
+      if (sum - max <= max) { showErr("违反多边形条件：最长边 ≥ 其余边之和"); return; }
+      
+      initPolygon(N, sides);
+      modal.style.display = 'none';
+      sideError.style.display = 'none';
+    }
+
+    function showErr(msg) {
+      sideError.textContent = msg;
+      sideError.style.display = 'block';
+    }
+
+    resize();
+    PageComponents.initPage({ title: '边的关系探索', icon: 'fa-project-diagram' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF工具箱 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+    }
+
+    .tool-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+      transition: all var(--transition);
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+
+    .tool-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: var(--space-4);
+    }
+
+    .tool-card h3 {
+      margin-bottom: var(--space-2);
+    }
+
+    .tool-card p {
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    .upload-zone {
+      border: 3px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      text-align: center;
+      margin: var(--space-4) 0;
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary);
+      background: var(--primary-bg);
+    }
+
+    .upload-zone i {
+      font-size: 3rem;
+      color: var(--primary-light);
+      margin-bottom: var(--space-3);
+    }
+
+    .file-list {
+      margin: var(--space-4) 0;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      background: var(--bg);
+      border-radius: var(--radius);
+      margin-bottom: var(--space-2);
+    }
+
+    .file-item i {
+      color: var(--danger);
+      font-size: 1.2rem;
+    }
+
+    .file-item .name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .file-item .size {
+      color: var(--text-light);
+      font-size: 0.85rem;
+    }
+
+    .file-item .delete {
+      color: var(--danger);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .file-item .delete:hover {
+      opacity: 0.7;
+    }
+
+    .progress-container {
+      margin: var(--space-4) 0;
+      display: none;
+    }
+
+    .progress-container.active {
+      display: block;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .progress-text {
+      text-align: center;
+      margin-top: var(--space-2);
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .tool-panel {
+      display: none;
+    }
+
+    .tool-panel.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>PDF 工具箱</h1>
+      <p style="color: var(--text-light);">在线处理 PDF 文件，无需安装软件</p>
+    </div>
+
+    <!-- 工具选择 -->
+    <div class="tools-grid" id="toolsGrid">
+      <div class="tool-card" onclick="selectTool('merge')">
+        <div class="tool-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+          <i class="fas fa-object-group" style="color: white;"></i>
+        </div>
+        <h3>PDF 合并</h3>
+        <p>将多个 PDF 文件合并为一个</p>
+      </div>
+
+      <div class="tool-card" onclick="selectTool('image-to-pdf')">
+        <div class="tool-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+          <i class="fas fa-images" style="color: white;"></i>
+        </div>
+        <h3>图片转 PDF</h3>
+        <p>将多张图片合并为一个 PDF</p>
+      </div>
+
+      <div class="tool-card" onclick="selectTool('rotate')">
+        <div class="tool-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+          <i class="fas fa-sync-alt" style="color: white;"></i>
+        </div>
+        <h3>PDF 旋转</h3>
+        <p>旋转 PDF 页面方向</p>
+      </div>
+
+      <div class="tool-card" onclick="selectTool('split')">
+        <div class="tool-icon" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">
+          <i class="fas fa-cut" style="color: white;"></i>
+        </div>
+        <h3>PDF 拆分</h3>
+        <p>将 PDF 拆分为多个文件</p>
+      </div>
+    </div>
+
+    <!-- PDF 合并面板 -->
+    <div class="tool-panel" id="panel-merge">
+      <div class="card" style="margin-top: var(--space-5);">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-object-group"></i> PDF 合并</div>
+          <button class="btn btn-ghost btn-sm" onclick="showTools()">
+            <i class="fas fa-arrow-left"></i> 返回
+          </button>
+        </div>
+
+        <div class="upload-zone" id="mergeUpload">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <h3>拖拽 PDF 文件到这里</h3>
+          <p style="color: var(--text-light);">或点击选择文件（支持多个）</p>
+          <input type="file" id="mergeInput" accept=".pdf" multiple style="display: none;">
+        </div>
+
+        <div class="file-list" id="mergeFileList"></div>
+
+        <div class="progress-container" id="mergeProgress">
+          <div class="progress-bar">
+            <div class="fill" id="mergeProgressFill"></div>
+          </div>
+          <div class="progress-text" id="mergeProgressText">处理中...</div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width: 100%;" onclick="mergePDFs()">
+          <i class="fas fa-object-group"></i> 合并 PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- 图片转 PDF 面板 -->
+    <div class="tool-panel" id="panel-image-to-pdf">
+      <div class="card" style="margin-top: var(--space-5);">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-images"></i> 图片转 PDF</div>
+          <button class="btn btn-ghost btn-sm" onclick="showTools()">
+            <i class="fas fa-arrow-left"></i> 返回
+          </button>
+        </div>
+
+        <div class="upload-zone" id="imageUpload">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <h3>拖拽图片文件到这里</h3>
+          <p style="color: var(--text-light);">支持 JPG、PNG、WebP 格式</p>
+          <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+        </div>
+
+        <div class="file-list" id="imageFileList"></div>
+
+        <div class="form-group">
+          <label class="form-label">页面尺寸</label>
+          <select class="form-select" id="pageSize">
+            <option value="a4">A4</option>
+            <option value="letter">Letter</option>
+            <option value="fit">适应图片大小</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">方向</label>
+          <select class="form-select" id="pageOrientation">
+            <option value="portrait">纵向</option>
+            <option value="landscape">横向</option>
+            <option value="auto">自动</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width: 100%;" onclick="imagesToPdf()">
+          <i class="fas fa-file-pdf"></i> 生成 PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- PDF 旋转面板 -->
+    <div class="tool-panel" id="panel-rotate">
+      <div class="card" style="margin-top: var(--space-5);">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-sync-alt"></i> PDF 旋转</div>
+          <button class="btn btn-ghost btn-sm" onclick="showTools()">
+            <i class="fas fa-arrow-left"></i> 返回
+          </button>
+        </div>
+
+        <div class="upload-zone" id="rotateUpload">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <h3>拖拽 PDF 文件到这里</h3>
+          <input type="file" id="rotateInput" accept=".pdf" style="display: none;">
+        </div>
+
+        <div class="file-list" id="rotateFileList"></div>
+
+        <div class="form-group">
+          <label class="form-label">旋转角度</label>
+          <select class="form-select" id="rotateAngle">
+            <option value="90">顺时针 90°</option>
+            <option value="180">180°</option>
+            <option value="270">逆时针 90°</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width: 100%;" onclick="rotatePDF()">
+          <i class="fas fa-sync-alt"></i> 旋转 PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- PDF 拆分面板 -->
+    <div class="tool-panel" id="panel-split">
+      <div class="card" style="margin-top: var(--space-5);">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-cut"></i> PDF 拆分</div>
+          <button class="btn btn-ghost btn-sm" onclick="showTools()">
+            <i class="fas fa-arrow-left"></i> 返回
+          </button>
+        </div>
+
+        <div class="upload-zone" id="splitUpload">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <h3>拖拽 PDF 文件到这里</h3>
+          <input type="file" id="splitInput" accept=".pdf" style="display: none;">
+        </div>
+
+        <div class="file-list" id="splitFileList"></div>
+
+        <div class="form-group">
+          <label class="form-label">拆分方式</label>
+          <select class="form-select" id="splitMode">
+            <option value="each">每页一个文件</option>
+            <option value="range">按页码范围</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="splitRangeGroup" style="display: none;">
+          <label class="form-label">页码范围（如：1-3,5,7-9）</label>
+          <input type="text" class="form-input" id="splitRange" placeholder="1-3,5,7-9">
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width: 100%;" onclick="splitPDF()">
+          <i class="fas fa-cut"></i> 拆分 PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { PDFDocument } = PDFLib;
+
+    let currentTool = null;
+    let mergeFiles = [];
+    let imageFiles = [];
+    let rotateFile = null;
+    let splitFile = null;
+
+    // 工具选择
+    function selectTool(tool) {
+      currentTool = tool;
+      document.getElementById('toolsGrid').style.display = 'none';
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`panel-${tool}`).classList.add('active');
+    }
+
+    function showTools() {
+      document.getElementById('toolsGrid').style.display = 'grid';
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+    }
+
+    // 文件上传初始化
+    function initUpload(zoneId, inputId, callback) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(inputId);
+
+      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        callback(e.dataTransfer.files);
+      });
+      input.addEventListener('change', (e) => callback(e.target.files));
+    }
+
+    // 合并文件列表
+    function renderMergeFileList() {
+      const list = document.getElementById('mergeFileList');
+      list.innerHTML = mergeFiles.map((file, i) => `
+        <div class="file-item">
+          <i class="fas fa-file-pdf"></i>
+          <span class="name">${file.name}</span>
+          <span class="size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+          <span class="delete" onclick="removeMergeFile(${i})">
+            <i class="fas fa-times"></i>
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function removeMergeFile(index) {
+      mergeFiles.splice(index, 1);
+      renderMergeFileList();
+    }
+
+    // 图片文件列表
+    function renderImageFileList() {
+      const list = document.getElementById('imageFileList');
+      list.innerHTML = imageFiles.map((file, i) => `
+        <div class="file-item">
+          <i class="fas fa-image" style="color: var(--primary);"></i>
+          <span class="name">${file.name}</span>
+          <span class="size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+          <span class="delete" onclick="removeImageFile(${i})">
+            <i class="fas fa-times"></i>
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function removeImageFile(index) {
+      imageFiles.splice(index, 1);
+      renderImageFileList();
+    }
+
+    // PDF 合并
+    async function mergePDFs() {
+      if (mergeFiles.length < 2) {
+        alert('请至少选择 2 个 PDF 文件');
+        return;
+      }
+
+      const progress = document.getElementById('mergeProgress');
+      const progressFill = document.getElementById('mergeProgressFill');
+      const progressText = document.getElementById('mergeProgressText');
+      progress.classList.add('active');
+
+      try {
+        const mergedPdf = await PDFDocument.create();
+
+        for (let i = 0; i < mergeFiles.length; i++) {
+          progressFill.style.width = ((i + 1) / mergeFiles.length * 100) + '%';
+          progressText.textContent = `正在处理第 ${i + 1}/${mergeFiles.length} 个文件...`;
+
+          const fileBytes = await mergeFiles[i].arrayBuffer();
+          const pdf = await PDFDocument.load(fileBytes);
+          const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          pages.forEach(page => mergedPdf.addPage(page));
+        }
+
+        const mergedBytes = await mergedPdf.save();
+        downloadBlob(mergedBytes, `合并_${Date.now()}.pdf`, 'application/pdf');
+
+        progressText.textContent = '合并完成！';
+        setTimeout(() => progress.classList.remove('active'), 2000);
+
+      } catch (err) {
+        console.error('合并失败:', err);
+        alert('合并失败：' + err.message);
+        progress.classList.remove('active');
+      }
+    }
+
+    // 图片转 PDF
+    async function imagesToPdf() {
+      if (imageFiles.length === 0) {
+        alert('请至少选择 1 张图片');
+        return;
+      }
+
+      try {
+        const pdfDoc = await PDFDocument.create();
+        const pageSize = document.getElementById('pageSize').value;
+        const orientation = document.getElementById('pageOrientation').value;
+
+        for (const file of imageFiles) {
+          const imageBytes = await file.arrayBuffer();
+          let image;
+
+          if (file.type === 'image/png') {
+            image = await pdfDoc.embedPng(imageBytes);
+          } else {
+            image = await pdfDoc.embedJpg(imageBytes);
+          }
+
+          let pageWidth, pageHeight;
+
+          if (pageSize === 'fit') {
+            pageWidth = image.width;
+            pageHeight = image.height;
+          } else if (pageSize === 'a4') {
+            pageWidth = orientation === 'landscape' ? 842 : 595;
+            pageHeight = orientation === 'landscape' ? 595 : 842;
+          } else {
+            pageWidth = orientation === 'landscape' ? 792 : 612;
+            pageHeight = orientation === 'landscape' ? 612 : 792;
+          }
+
+          // 如果是自动方向
+          if (orientation === 'auto') {
+            if (image.width > image.height) {
+              [pageWidth, pageHeight] = [842, 595]; // A4 横向
+            } else {
+              [pageWidth, pageHeight] = [595, 842]; // A4 纵向
+            }
+          }
+
+          const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+          // 计算缩放以适应页面
+          const scale = Math.min(pageWidth / image.width, pageHeight / image.height);
+          const scaledWidth = image.width * scale;
+          const scaledHeight = image.height * scale;
+
+          page.drawImage(image, {
+            x: (pageWidth - scaledWidth) / 2,
+            y: (pageHeight - scaledHeight) / 2,
+            width: scaledWidth,
+            height: scaledHeight,
+          });
+        }
+
+        const pdfBytes = await pdfDoc.save();
+        downloadBlob(pdfBytes, `图片转PDF_${Date.now()}.pdf`, 'application/pdf');
+
+      } catch (err) {
+        console.error('转换失败:', err);
+        alert('转换失败：' + err.message);
+      }
+    }
+
+    // PDF 旋转
+    async function rotatePDF() {
+      if (!rotateFile) {
+        alert('请选择 PDF 文件');
+        return;
+      }
+
+      try {
+        const fileBytes = await rotateFile.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(fileBytes);
+        const angle = parseInt(document.getElementById('rotateAngle').value);
+        const pages = pdfDoc.getPages();
+
+        pages.forEach(page => {
+          const currentRotation = page.getRotation().angle;
+          page.setRotation((currentRotation + angle) % 360);
+        });
+
+        const pdfBytes = await pdfDoc.save();
+        downloadBlob(pdfBytes, `旋转_${rotateFile.name}`, 'application/pdf');
+
+      } catch (err) {
+        console.error('旋转失败:', err);
+        alert('旋转失败：' + err.message);
+      }
+    }
+
+    // PDF 拆分
+    async function splitPDF() {
+      if (!splitFile) {
+        alert('请选择 PDF 文件');
+        return;
+      }
+
+      try {
+        const fileBytes = await splitFile.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(fileBytes);
+        const totalPages = pdfDoc.getPageCount();
+        const mode = document.getElementById('splitMode').value;
+
+        if (mode === 'each') {
+          // 每页一个文件
+          for (let i = 0; i < totalPages; i++) {
+            const newPdf = await PDFDocument.create();
+            const [page] = await newPdf.copyPages(pdfDoc, [i]);
+            newPdf.addPage(page);
+            const pdfBytes = await newPdf.save();
+            downloadBlob(pdfBytes, `拆分_${i + 1}.pdf`, 'application/pdf');
+          }
+        } else {
+          // 按页码范围
+          const rangeStr = document.getElementById('splitRange').value;
+          const pages = parsePageRange(rangeStr, totalPages);
+
+          if (pages.length === 0) {
+            alert('请输入有效的页码范围');
+            return;
+          }
+
+          const newPdf = await PDFDocument.create();
+          const copiedPages = await newPdf.copyPages(pdfDoc, pages);
+          copiedPages.forEach(page => newPdf.addPage(page));
+          const pdfBytes = await newPdf.save();
+          downloadBlob(pdfBytes, `拆分_${rangeStr}.pdf`, 'application/pdf');
+        }
+
+        alert('拆分完成！');
+
+      } catch (err) {
+        console.error('拆分失败:', err);
+        alert('拆分失败：' + err.message);
+      }
+    }
+
+    function parsePageRange(str, maxPage) {
+      const pages = new Set();
+      const parts = str.split(',');
+
+      for (const part of parts) {
+        if (part.includes('-')) {
+          const [start, end] = part.split('-').map(Number);
+          for (let i = start; i <= Math.min(end, maxPage); i++) {
+            pages.add(i - 1); // 转为0索引
+          }
+        } else {
+          const page = parseInt(part);
+          if (page >= 1 && page <= maxPage) {
+            pages.add(page - 1);
+          }
+        }
+      }
+
+      return Array.from(pages).sort((a, b) => a - b);
+    }
+
+    // 下载文件
+    function downloadBlob(data, filename, mimeType) {
+      const blob = new Blob([data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 拆分模式切换
+    document.getElementById('splitMode').addEventListener('change', function() {
+      document.getElementById('splitRangeGroup').style.display =
+        this.value === 'range' ? 'block' : 'none';
+    });
+
+    // 初始化上传区域
+    initUpload('mergeUpload', 'mergeInput', (files) => {
+      for (const file of files) {
+        if (file.type === 'application/pdf') {
+          mergeFiles.push(file);
+        }
+      }
+      renderMergeFileList();
+    });
+
+    initUpload('imageUpload', 'imageInput', (files) => {
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          imageFiles.push(file);
+        }
+      }
+      renderImageFileList();
+    });
+
+    initUpload('rotateUpload', 'rotateInput', (files) => {
+      if (files[0] && files[0].type === 'application/pdf') {
+        rotateFile = files[0];
+        document.getElementById('rotateFileList').innerHTML = `
+          <div class="file-item">
+            <i class="fas fa-file-pdf"></i>
+            <span class="name">${rotateFile.name}</span>
+            <span class="size">${(rotateFile.size / 1024 / 1024).toFixed(2)} MB</span>
+          </div>
+        `;
+      }
+    });
+
+    initUpload('splitUpload', 'splitInput', (files) => {
+      if (files[0] && files[0].type === 'application/pdf') {
+        splitFile = files[0];
+        document.getElementById('splitFileList').innerHTML = `
+          <div class="file-item">
+            <i class="fas fa-file-pdf"></i>
+            <span class="name">${splitFile.name}</span>
+            <span class="size">${(splitFile.size / 1024 / 1024).toFixed(2)} MB</span>
+          </div>
+        `;
+      }
+    });
+
+    PageComponents.initPage({ title: 'PDF工具箱', icon: 'fa-file-pdf' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

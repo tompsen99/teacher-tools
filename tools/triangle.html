@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📐 三角形拼接实验室 (中部拖拽修复版)</title>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --bg: #f4f6f8;
+      --panel-bg: #ffffff;
+      --text: #2b2d42;
+      --free: #e63946;
+      --joint: #2a9d8f;
+      --gold: #ffd700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+    .container { display: flex; width: 100%; height: 100%; }
+    .sidebar {
+      width: 300px;
+      background: var(--panel-bg);
+      padding: 24px;
+      box-shadow: 2px 0 15px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 10;
+      overflow-y: auto;
+    }
+    .sidebar h2 { font-size: 1.3rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    .instructions {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #555;
+      background: #eef2ff;
+      padding: 14px;
+      border-radius: 10px;
+      border-left: 4px solid var(--primary);
+    }
+    .instructions strong { color: var(--text); }
+    .section-title { font-size: 0.95rem; font-weight: 600; margin-top: 5px; color: #666; }
+    .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .btn-preset {
+      padding: 10px 6px; border: 2px solid #e0e0e0; border-radius: 8px;
+      background: #fff; font-size: 0.95rem; cursor: pointer;
+      transition: all 0.2s; color: var(--text); font-weight: 500;
+    }
+    .btn-preset:hover { border-color: var(--primary); background: #f8f9ff; transform: translateY(-1px); }
+    .btn-preset:active { transform: translateY(0); }
+    .btn-clear {
+      margin-top: auto; padding: 12px; background: #e9ecef;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-weight: 500; color: #495057;
+    }
+    .btn-clear:hover { background: #dee2e6; }
+    #status {
+      padding: 12px; background: #e9ecef; border-radius: 8px;
+      text-align: center; font-weight: 600; font-size: 0.9rem;
+      min-height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+    }
+    #status.success { background: #d1e7dd; color: #0f5132; box-shadow: 0 2px 8px rgba(42,157,143,0.2); }
+    #status.warn { background: #f8d7da; color: #842029; }
+    #canvas-wrapper { flex: 1; position: relative; background: #fafafa; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .hint {
+      position: absolute; bottom: 15px; right: 15px;
+      background: rgba(0,0,0,0.6); color: white;
+      padding: 6px 12px; border-radius: 20px;
+      font-size: 0.8rem; pointer-events: none; opacity: 0.9;
+    }
+    .scale-info { position: absolute; top: 10px; right: 10px; background: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; color: #666; box-shadow: 0 1px 3px rgba(0,0,0,0.1); pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+  <div class="container">
+    <aside class="sidebar">
+      <h2>📐 三角形拼接实验室</h2>
+      <div class="instructions">
+        🎯 <strong>操作指南：</strong><br>
+        1. 点击左侧按钮生成指定长度的刚性线段。<br>
+        2. 🔴 <strong>拖拽红色端点</strong>：绕另一端点旋转，长度绝对固定。<br>
+        3. ↔️ <strong>拖拽线段中部</strong>：<br>
+           • 独立线段 → 整体平移<br>
+           • 一端已连 → 绕连接点刚性旋转<br>
+        4. 🟢 <strong>绿色关节</strong>：两端均连接后自动锁定，不可拖动。<br>
+        5. ✨ 闭合瞬间立即锁定形状，金光特效提示成功。
+      </div>
+      <div class="section-title">📏 选择线段长度 (cm)</div>
+      <div class="preset-grid" id="preset-buttons"></div>
+      <button class="btn-clear" onclick="resetAll()">🔄 清空画布 & 重新开始</button>
+      <div id="status">💡 准备就绪，请选择长度生成线段</div>
+    </aside>
+    <div id="canvas-wrapper">
+      <canvas id="canvas"></canvas>
+      <div class="hint">🔴 自由端点可旋转 • ↔️ 中部可平移/旋转 • 🟢 关节已锁定</div>
+      <div class="scale-info">比例尺: 1 cm = 40 px (屏幕标准)</div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvas-wrapper');
+    const statusEl = document.getElementById('status');
+    const presetContainer = document.getElementById('preset-buttons');
+
+    const CM_TO_PX = 40;
+    const SNAP_THRESHOLD = 16;
+    const COLORS = ['#E63946', '#F4A261', '#2A9D8F', '#457B9D', '#6A4C93', '#1982C4', '#8AC926', '#FF595E', '#8338EC', '#3A86FF', '#FB5607', '#FFBE0B', '#2B2D42'];
+    let colorIndex = 0;
+    const PRESETS = Array.from({ length: 13 }, (_, i) => i + 3); // 3~15 cm
+
+    let vertices = [];
+    let segments = [];
+    let dragState = null;
+    let isTriangleComplete = false;
+    let completedTriangle = null;
+    let animFrameId = null;
+    let time = 0;
+    let spawnCount = 0;
+    let dpr = window.devicePixelRatio || 1;
+
+    PRESETS.forEach(cm => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-preset';
+      btn.textContent = `${cm} cm`;
+      btn.onclick = () => addSegment(cm);
+      presetContainer.appendChild(btn);
+    });
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const rect = wrapper.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      draw();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function getSafeSpawnPos() {
+      const w = canvas.width / dpr, h = canvas.height / dpr;
+      const margin = 80;
+      const cols = 3, rows = 3;
+      const spacingX = (w - margin * 2) / cols;
+      const spacingY = (h - margin * 2) / rows;
+      const idx = spawnCount++;
+      const col = idx % cols, row = Math.floor(idx / cols);
+      const x = margin + spacingX * col + spacingX / 2;
+      const y = margin + spacingY * row + spacingY / 3;
+      return { x: Math.min(x, w - margin), y: Math.min(y, h - margin) };
+    }
+
+    function addSegment(cm) {
+      if (isTriangleComplete) {
+        statusEl.className = 'warn'; statusEl.textContent = '⚠️ 当前已闭合，请先清空'; return;
+      }
+      if (segments.length >= 6) {
+        statusEl.className = 'warn'; statusEl.textContent = '⚠️ 最多 6 条，请清理画布'; return;
+      }
+      const lenPx = cm * CM_TO_PX;
+      const pos = getSafeSpawnPos();
+      const color = COLORS[colorIndex % COLORS.length]; colorIndex++;
+
+      const v1 = { id: `v${Date.now()}_1`, x: pos.x - lenPx/2, y: pos.y, segments: [] };
+      const v2 = { id: `v${Date.now()}_2`, x: pos.x + lenPx/2, y: pos.y, segments: [] };
+      const seg = { id: `s${Date.now()}`, lengthPx: lenPx, v1, v2, color };
+      
+      v1.segments.push(seg); v2.segments.push(seg);
+      vertices.push(v1, v2); segments.push(seg);
+      
+      statusEl.className = ''; statusEl.textContent = `✅ 已添加 ${cm}cm 线段，拖拽中部平移或端点旋转`;
+      draw();
+    }
+
+    // 刚性长度约束辅助函数
+    function enforceLength(seg, movingV, pivotV) {
+      const angle = Math.atan2(movingV.y - pivotV.y, movingV.x - pivotV.x);
+      movingV.x = pivotV.x + seg.lengthPx * Math.cos(angle);
+      movingV.y = pivotV.y + seg.lengthPx * Math.sin(angle);
+    }
+
+    function mergeVertices(target, source) {
+      if (target.id === source.id) return;
+      if (source.segments.some(s => target.segments.includes(s))) return;
+
+      source.x = target.x; source.y = target.y;
+      source.segments.forEach(seg => {
+        if (seg.v1 === source) seg.v1 = target;
+        if (seg.v2 === source) seg.v2 = target;
+        if (!target.segments.includes(seg)) target.segments.push(seg);
+      });
+      vertices = vertices.filter(v => v.id !== source.id);
+      
+      if (dragState && dragState.target.id === source.id) dragState.target = target;
+      checkTriangle();
+    }
+
+    function checkTriangle() {
+      if (segments.length !== 3 || vertices.length !== 3) return false;
+      if (vertices.every(v => v.segments.length === 2)) {
+        isTriangleComplete = true;
+        completedTriangle = { vertices: [...vertices], segments: [...segments] };
+        statusEl.className = 'success'; statusEl.innerHTML = '🎉 完美闭合！三角形已刚性固定';
+        if (!animFrameId) startGlowAnimation();
+        return true;
+      }
+      return false;
+    }
+
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const cx = e.clientX || (e.touches && e.touches[0].clientX);
+      const cy = e.clientY || (e.touches && e.touches[0].clientY);
+      return { x: cx - rect.left, y: cy - rect.top };
+    }
+
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', moveDrag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    canvas.addEventListener('mousemove', handleHover);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); startDrag(e); });
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); moveDrag(e); });
+    canvas.addEventListener('touchend', endDrag);
+
+    function startDrag(e) {
+      if (isTriangleComplete) return;
+      const pos = getMousePos(e);
+      dragState = { lastX: pos.x, lastY: pos.y };
+
+      // 1. 优先检测自由端点（仅连接1条线段）
+      for (const v of vertices) {
+        if (v.segments.length > 1) continue;
+        if (Math.hypot(v.x - pos.x, v.y - pos.y) < SNAP_THRESHOLD) {
+          dragState.type = 'vertex'; dragState.target = v;
+          canvas.style.cursor = 'grabbing'; return;
+        }
+      }
+      // 2. 检测线段中部（两端未完全锁死即可）
+      for (const seg of segments) {
+        const v1Locked = seg.v1.segments.length >= 2;
+        const v2Locked = seg.v2.segments.length >= 2;
+        if (v1Locked && v2Locked) continue; // 完全锁定，跳过
+
+        const mx = (seg.v1.x + seg.v2.x)/2, my = (seg.v1.y + seg.v2.y)/2;
+        if (Math.hypot(mx - pos.x, my - pos.y) < 25) {
+          dragState.type = 'segment'; dragState.target = seg;
+          canvas.style.cursor = 'move'; return;
+        }
+      }
+      dragState = null;
+    }
+
+    function moveDrag(e) {
+      if (!dragState || isTriangleComplete) return;
+      const pos = getMousePos(e);
+
+      if (dragState.type === 'vertex') {
+        const v = dragState.target;
+        if (v.segments.length !== 1) { endDrag(); return; }
+        const seg = v.segments[0];
+        const pivot = (seg.v1 === v) ? seg.v2 : seg.v1;
+        const angle = Math.atan2(pos.y - pivot.y, pos.x - pivot.x);
+        v.x = pivot.x + seg.lengthPx * Math.cos(angle);
+        v.y = pivot.y + seg.lengthPx * Math.sin(angle);
+        trySnap(v);
+        if (v.segments.length > 1 || isTriangleComplete) endDrag();
+      } 
+      else if (dragState.type === 'segment') {
+        const dx = pos.x - dragState.lastX;
+        const dy = pos.y - dragState.lastY;
+        dragState.lastX = pos.x; dragState.lastY = pos.y;
+        const seg = dragState.target;
+        const v1Locked = seg.v1.segments.length >= 2;
+        const v2Locked = seg.v2.segments.length >= 2;
+
+        if (v1Locked && !v2Locked) {
+          seg.v2.x += dx; seg.v2.y += dy;
+          enforceLength(seg, seg.v2, seg.v1);
+          trySnap(seg.v2);
+        } else if (v2Locked && !v1Locked) {
+          seg.v1.x += dx; seg.v1.y += dy;
+          enforceLength(seg, seg.v1, seg.v2);
+          trySnap(seg.v1);
+        } else {
+          seg.v1.x += dx; seg.v1.y += dy;
+          seg.v2.x += dx; seg.v2.y += dy;
+          trySnap(seg.v1);
+          if (!isTriangleComplete) trySnap(seg.v2);
+        }
+
+        if ((seg.v1.segments.length >= 2 && seg.v2.segments.length >= 2) || isTriangleComplete) endDrag();
+      }
+      draw();
+    }
+
+    function endDrag() { dragState = null; canvas.style.cursor = 'default'; draw(); }
+    
+    function trySnap(movingV) {
+      if (!movingV || movingV.segments.length >= 2) return;
+      for (const v of vertices) {
+        if (v.id === movingV.id) continue;
+        if (Math.hypot(v.x - movingV.x, v.y - movingV.y) < SNAP_THRESHOLD) {
+          mergeVertices(v, movingV); return;
+        }
+      }
+    }
+
+    function handleHover(e) {
+      if (dragState || isTriangleComplete) { canvas.style.cursor = 'default'; return; }
+      const pos = getMousePos(e);
+      for (const v of vertices) {
+        if (v.segments.length === 1 && Math.hypot(v.x - pos.x, v.y - pos.y) < SNAP_THRESHOLD) {
+          canvas.style.cursor = 'grab'; return;
+        }
+      }
+      for (const seg of segments) {
+        const v1Locked = seg.v1.segments.length >= 2;
+        const v2Locked = seg.v2.segments.length >= 2;
+        if (!(v1Locked && v2Locked)) {
+          const mx = (seg.v1.x + seg.v2.x)/2, my = (seg.v1.y + seg.v2.y)/2;
+          if (Math.hypot(mx - pos.x, my - pos.y) < 25) { 
+            canvas.style.cursor = (!v1Locked && !v2Locked) ? 'move' : 'grab'; 
+            return; 
+          }
+        }
+      }
+      canvas.style.cursor = 'not-allowed';
+    }
+
+    function draw() {
+      const w = canvas.width / dpr, h = canvas.height / dpr;
+      ctx.clearRect(0, 0, w, h);
+      drawGrid(w, h);
+
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (const seg of segments) {
+        const isCompleted = isTriangleComplete && completedTriangle.segments.includes(seg);
+        ctx.beginPath(); ctx.moveTo(seg.v1.x, seg.v1.y); ctx.lineTo(seg.v2.x, seg.v2.y);
+        ctx.lineWidth = isCompleted ? 7 : 5;
+        ctx.strokeStyle = isCompleted ? '#ffd700' : seg.color;
+        ctx.shadowBlur = isCompleted ? 12 : 0; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+        ctx.stroke(); ctx.shadowBlur = 0;
+
+        const mx = (seg.v1.x + seg.v2.x)/2, my = (seg.v1.y + seg.v2.y)/2;
+        const angle = Math.atan2(seg.v2.y - seg.v1.y, seg.v2.x - seg.v1.x);
+        ctx.save(); ctx.translate(mx, my); ctx.rotate(angle);
+        ctx.fillStyle = '#333'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+        ctx.shadowColor = '#fff'; ctx.shadowBlur = 4;
+        ctx.fillText(`${(seg.lengthPx / CM_TO_PX).toFixed(0)} cm`, 0, -14);
+        ctx.restore();
+      }
+
+      for (const v of vertices) {
+        const isJoint = v.segments.length >= 2;
+        ctx.beginPath(); ctx.arc(v.x, v.y, isJoint ? 7 : 9, 0, Math.PI * 2);
+        ctx.fillStyle = isJoint ? '#2a9d8f' : '#e63946'; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        
+        if (!isJoint) {
+          ctx.beginPath(); ctx.arc(v.x, v.y, 14, 0, Math.PI*2);
+          ctx.strokeStyle = 'rgba(230,57,70,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+        } else {
+          ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('🔒', v.x, v.y);
+        }
+      }
+    }
+
+    function drawGrid(w, h) {
+      ctx.strokeStyle = '#eef1f5'; ctx.lineWidth = 1; const step = 40;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += step) { ctx.moveTo(x,0); ctx.lineTo(x,h); }
+      for (let y = 0; y <= h; y += step) { ctx.moveTo(0,y); ctx.lineTo(w,y); }
+      ctx.stroke();
+    }
+
+    function startGlowAnimation() {
+      function animate() {
+        if (!isTriangleComplete) return;
+        time += 0.06;
+        const w = canvas.width / dpr, h = canvas.height / dpr;
+        ctx.clearRect(0,0,w,h); drawGrid(w,h);
+        for (const seg of segments) { ctx.beginPath(); ctx.moveTo(seg.v1.x, seg.v1.y); ctx.lineTo(seg.v2.x, seg.v2.y); ctx.lineWidth=4; ctx.strokeStyle='#4361ee'; ctx.stroke(); }
+        for (const v of vertices) { ctx.beginPath(); ctx.arc(v.x, v.y, 9, 0, Math.PI*2); ctx.fillStyle='#2a9d8f'; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); }
+        
+        const pulse = 0.5 + 0.5 * Math.sin(time * 2.5);
+        const tri = completedTriangle.vertices;
+        ctx.beginPath(); ctx.moveTo(tri[0].x, tri[0].y); ctx.lineTo(tri[1].x, tri[1].y); ctx.lineTo(tri[2].x, tri[2].y); ctx.closePath();
+        ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 + pulse * 0.7})`;
+        ctx.lineWidth = 10 + pulse * 6; ctx.shadowBlur = 25 + pulse * 20; ctx.shadowColor = 'rgba(255, 200, 0, 0.9)';
+        ctx.stroke(); ctx.shadowBlur = 0;
+        ctx.fillStyle = `rgba(255, 215, 0, ${0.04 + pulse * 0.08})`; ctx.fill();
+        animFrameId = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    function resetAll() {
+      cancelAnimationFrame(animFrameId);
+      vertices = []; segments = []; dragState = null;
+      isTriangleComplete = false; completedTriangle = null;
+      animFrameId = null; time = 0; spawnCount = 0; colorIndex = 0;
+      statusEl.className = ''; statusEl.textContent = '💡 准备就绪，请选择长度生成线段';
+      draw();
+    }
+    draw();
+    PageComponents.initPage({ title: '三角形拼接实验室', icon: 'fa-drafting-compass' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

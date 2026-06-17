@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教师工具站 - 在线教学工具集合</title>
+  <meta name="description" content="为教师打造的专业在线工具集合，免费使用，无需注册。涵盖教学设计、课堂管理、数据处理等教师常用工具。">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="教师工具站 - 在线教学工具集合">
+  <meta property="og:description" content="为教师打造的专业在线工具集合，免费使用，无需注册。涵盖教学设计、课堂管理、数据处理等教师常用工具。">
+  <meta property="og:image" content="assets/images/og-cover.png">
+  <meta property="og:url" content="https://teacher-tools.example.com/">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="教师工具站 - 在线教学工具集合">
+  <meta name="twitter:description" content="为教师打造的专业在线工具集合，免费使用，无需注册。">
+  <meta name="twitter:image" content="assets/images/og-cover.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- Font Awesome Subset (~4KB vs ~100KB full) -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/icons.css?v=20260617">
+
+  <!-- 全局主题 -->
+  <link rel="stylesheet" href="assets/css/theme.css?v=20260617">
+
+  <!-- 引入全局配置 -->
+  <script src="assets/js/config.js?v=20260617"></script>
+
+  <style>
+    /* ================= 页面专属变量 ================= */
+    :root {
+      --hero-from: var(--primary);
+      --hero-to: #8b5cf6;
+    }
+
+    /* ================= 导航栏 ================= */
+    nav {
+      background: var(--card);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .logo i {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+
+    .nav-link {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color var(--transition-fast);
+    }
+
+    .nav-link:hover { color: var(--primary); }
+
+    .member-status {
+      font-size: 0.9rem;
+      padding: 6px var(--space-3);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .status-free { background: var(--bg-secondary); color: var(--text-light); }
+    .status-pro { background: linear-gradient(135deg, var(--warning-bg), #fde68a); color: #92400e; }
+    .status-trial { background: var(--info-bg); color: var(--info-dark); }
+
+    .act-btn {
+      padding: var(--space-2) var(--space-5);
+      background: linear-gradient(135deg, var(--warning), var(--warning-dark));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      transition: all var(--transition);
+    }
+
+    .act-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+    }
+
+    /* ================= Hero 区域 ================= */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+      color: #fff;
+      padding: 5rem var(--space-6);
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: var(--space-4);
+      font-weight: 800;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-bottom: var(--space-8);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ================= 搜索栏 ================= */
+    .search {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search input {
+      width: 100%;
+      padding: 1.2rem var(--space-12) 1.2rem var(--space-6);
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 1.1rem;
+      box-shadow: var(--shadow-lg);
+      outline: none;
+      transition: all var(--transition);
+    }
+
+    .search input:focus {
+      box-shadow: var(--shadow-xl);
+    }
+
+    .search i {
+      position: absolute;
+      right: var(--space-6);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+    }
+
+    /* ================= 分类标签 ================= */
+    .cats {
+      max-width: 1200px;
+      margin: -2rem auto 2rem;
+      padding: 0 var(--space-6);
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .cat {
+      padding: 0.8rem 1.8rem;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all var(--transition);
+    }
+
+    .cat:hover, .cat.act {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* ================= 工具卡片区域 ================= */
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 var(--space-6);
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 3rem;
+      color: var(--text);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      transition: all var(--transition);
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary);
+    }
+
+    .icon {
+      width: 70px;
+      height: 70px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .card p {
+      color: var(--text-light);
+      margin-bottom: 1.2rem;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .tags {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+
+    .tag {
+      padding: 0.3rem 0.9rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    .link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      transition: all var(--transition);
+    }
+
+    .link:hover {
+      gap: 0.8rem;
+    }
+
+    /* ================= 特性区域 ================= */
+    .features {
+      background: var(--card);
+      padding: 5rem var(--space-6);
+      margin-top: 4rem;
+    }
+
+    .feat-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 3rem;
+      text-align: center;
+    }
+
+    .feat i {
+      font-size: 3rem;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    .feat h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .feat p {
+      color: var(--text-light);
+    }
+
+    /* ================= 页脚 ================= */
+    footer {
+      background: #0f172a;
+      color: var(--text-muted);
+      padding: 4rem var(--space-6) 2rem;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    .footer-section h4 {
+      color: #fff;
+      margin-bottom: var(--space-4);
+      font-size: 1.1rem;
+    }
+
+    .footer-section a {
+      display: block;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: var(--space-2);
+      transition: color var(--transition);
+    }
+
+    .footer-section a:hover { color: #fff; }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: var(--space-6);
+      border-top: 1px solid #1e293b;
+    }
+
+    /* ================= 激活弹窗 ================= */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-box {
+      background: var(--card);
+      padding: var(--space-10);
+      border-radius: var(--radius-xl);
+      width: 90%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+      animation: modalIn 0.3s ease;
+    }
+
+    @keyframes modalIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-box h3 {
+      font-size: 1.5rem;
+      margin-bottom: var(--space-3);
+    }
+
+    .modal-box p {
+      color: var(--text-light);
+      font-size: 0.95rem;
+      margin-bottom: var(--space-5);
+    }
+
+    .modal input {
+      width: 100%;
+      padding: var(--space-3);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      margin: var(--space-3) 0;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .modal input:focus { border-color: var(--primary); }
+
+    .btn-sub {
+      width: 100%;
+      padding: var(--space-3);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all var(--transition);
+    }
+
+    .btn-sub:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-close {
+      margin-top: var(--space-4);
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* ================= 加载状态覆盖 ================= */
+    .loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-light);
+    }
+
+    .loading i { font-size: 2rem; margin-bottom: var(--space-4); }
+
+    /* ================= 响应式 ================= */
+    @media (max-width: 768px) {
+      nav { flex-direction: column; gap: var(--space-4); }
+      .hero h1 { font-size: 2rem; }
+      .hero { padding: 3rem var(--space-4); }
+      .grid { grid-template-columns: 1fr; }
+      .cats { padding: 0 var(--space-4); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav>
+    <a href="/" class="logo">
+      <i class="fas fa-toolbox"></i> 教师工具站
+    </a>
+    <div class="nav-right">
+      <a href="#tools" class="nav-link">工具列表</a>
+      <a href="#about" class="nav-link">关于</a>
+      <span id="memStatus" class="member-status status-free">
+        <i class="fas fa-lock"></i> 游客
+      </span>
+      <button class="act-btn" onclick="openPay()">
+        <i class="fas fa-key"></i> 激活会员
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero 区域 -->
+  <section class="hero">
+    <h1>让教学更高效</h1>
+    <p>为教师打造的专业在线工具集合，免费使用，无需注册</p>
+    <div class="search">
+      <input placeholder="搜索工具..." id="sIn">
+      <i class="fas fa-search"></i>
+    </div>
+  </section>
+
+  <!-- 分类标签 -->
+  <div class="cats">
+    <div class="cat act" data-c="all">全部</div>
+    <div class="cat" data-c="design">设计</div>
+    <div class="cat" data-c="teaching">教学</div>
+    <div class="cat" data-c="office">办公</div>
+    <div class="cat" data-c="math">数学</div>
+  </div>
+
+  <!-- 工具列表 -->
+  <div class="container" id="tools">
+    <h2 class="section-title">热门工具</h2>
+    <div class="grid" id="tGrid">
+      <div class="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>正在加载最新工具...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 特性区域 -->
+  <section class="features" id="about">
+    <h2 class="section-title">为什么选择我们</h2>
+    <div class="feat-grid">
+      <div class="feat">
+        <i class="fas fa-bolt"></i>
+        <h3>快速高效</h3>
+        <p>打开即用，无需安装，节省您的宝贵时间</p>
+      </div>
+      <div class="feat">
+        <i class="fas fa-shield-alt"></i>
+        <h3>安全隐私</h3>
+        <p>纯前端计算，数据不上传，保护您的隐私</p>
+      </div>
+      <div class="feat">
+        <i class="fas fa-mobile-alt"></i>
+        <h3>多端适配</h3>
+        <p>电脑/平板/手机通用，随时随地使用</p>
+      </div>
+      <div class="feat">
+        <i class="fas fa-gift"></i>
+        <h3>基础免费</h3>
+        <p>核心功能永久开放，会员解锁更多高级功能</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>教师工具站</h4>
+        <p style="color: var(--text-muted); line-height: 1.8;">
+          为教师打造的专业在线工具集合，让教学更轻松、更高效。
+        </p>
+      </div>
+      <div class="footer-section">
+        <h4>快速链接</h4>
+        <a href="#tools">工具列表</a>
+        <a href="#about">关于我们</a>
+        <a href="#" onclick="openPay()">激活会员</a>
+      </div>
+      <div class="footer-section">
+        <h4>联系方式</h4>
+        <a href="#">公众号：教师工具站</a>
+        <a href="#">小红书：教师工具站</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 教师工具站 | 纯前端架构 | 本地运行</p>
+    </div>
+  </footer>
+
+  <!-- 激活弹窗 -->
+  <div class="modal" id="payModal">
+    <div class="modal-box">
+      <h3>🔑 激活会员</h3>
+      <p>解锁无限生成/高清导出/去水印等特权</p>
+      <input type="text" id="kIn" placeholder="请输入卡密 (TEACHERPRO-...)">
+      <button class="btn-sub" onclick="doPay()">立即激活</button>
+      <p id="payMsg" style="margin-top:12px;font-size:0.95rem;min-height:24px"></p>
+      <button class="btn-close" onclick="closePay()">关闭</button>
+    </div>
+  </div>
+
+  <!-- 引入会员模块 -->
+  <script src="assets/js/member.js?v=20260617"></script>
+
+  <script>
+    // ================= 会员 UI 更新 =================
+    function updMemUI() {
+      const status = member.getStatusText();
+      const el = document.getElementById('memStatus');
+      el.innerHTML = `<i class="fas fa-${member.isPro ? 'crown' : 'lock'}"></i> ${status.text}`;
+      el.className = `member-status ${status.class}`;
+    }
+
+    // ================= 激活弹窗 =================
+    function openPay() {
+      document.getElementById('payModal').classList.add('open');
+      document.getElementById('kIn').focus();
+    }
+
+    function closePay() {
+      document.getElementById('payModal').classList.remove('open');
+      document.getElementById('payMsg').textContent = '';
+      document.getElementById('kIn').value = '';
+    }
+
+    async function doPay() {
+      const key = document.getElementById('kIn').value;
+      const msg = document.getElementById('payMsg');
+
+      if (!key.trim()) {
+        msg.style.color = '#ef4444';
+        msg.textContent = '❌ 请输入卡密';
+        return;
+      }
+
+      msg.style.color = '#333';
+      msg.textContent = '⏳ 验证中...';
+
+      const result = await member.activate(key);
+
+      msg.style.color = result.ok ? '#10b981' : '#ef4444';
+      msg.textContent = result.msg;
+
+      if (result.ok) {
+        setTimeout(() => {
+          closePay();
+          updMemUI();
+        }, 1500);
+      }
+    }
+
+    // 回车激活
+    document.getElementById('kIn').addEventListener('keypress', e => {
+      if (e.key === 'Enter') doPay();
+    });
+
+    // 点击遮罩关闭
+    document.getElementById('payModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closePay();
+    });
+
+    // ================= 工具加载 =================
+    async function loadTools() {
+      const grid = document.getElementById('tGrid');
+
+      try {
+        // 添加时间戳防缓存
+        const response = await fetch('tools.json?t=' + Date.now());
+
+        if (!response.ok) {
+          // 如果 tools.json 不存在，使用本地存储的数据
+          const localTools = JSON.parse(localStorage.getItem('teacherToolsData') || '[]');
+          if (localTools.length > 0) {
+            renderTools(localTools);
+            return;
+          }
+          throw new Error('无法加载工具配置');
+        }
+
+        const data = await response.json();
+
+        if (!data.tools || data.tools.length === 0) {
+          grid.innerHTML = '<div class="loading"><i class="fas fa-inbox"></i><p>暂无工具配置</p></div>';
+          return;
+        }
+
+        renderTools(data.tools);
+
+      } catch (error) {
+        console.error('加载工具失败:', error);
+
+        // 尝试从本地存储加载
+        const localTools = JSON.parse(localStorage.getItem('teacherToolsData') || '[]');
+        if (localTools.length > 0) {
+          renderTools(localTools);
+          return;
+        }
+
+        grid.innerHTML = `
+          <div class="loading" style="color:var(--danger)">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>加载失败 (${error.message})</p>
+            <small>请检查 tools.json 是否存在且格式正确</small>
+          </div>
+        `;
+      }
+    }
+
+    function renderTools(tools) {
+      const grid = document.getElementById('tGrid');
+
+      grid.innerHTML = tools.map(tool => `
+        <div class="card" data-category="${(tool.category || ['teaching']).join(' ')}" onclick="window.location.href='tools/${tool.file}'">
+          <div class="icon" style="background:${tool.gradient || 'linear-gradient(135deg, var(--primary), var(--primary-light))'}">
+            <i class="fas ${tool.icon || 'fa-tools'}"></i>
+          </div>
+          <h3>${tool.name}</h3>
+          <p>${tool.description}</p>
+          <div class="tags">
+            ${(tool.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+          </div>
+          <span class="link">立即使用 <i class="fas fa-arrow-right"></i></span>
+        </div>
+      `).join('');
+
+      // 重新绑定事件
+      bindCategoryFilter();
+      bindSearch();
+    }
+
+    // ================= 分类筛选 =================
+    function bindCategoryFilter() {
+      const tabs = document.querySelectorAll('.cat');
+      const cards = document.querySelectorAll('.card');
+
+      tabs.forEach(tab => {
+        tab.onclick = () => {
+          tabs.forEach(t => t.classList.remove('act'));
+          tab.classList.add('act');
+          const cat = tab.dataset.c;
+
+          cards.forEach(card => {
+            const cats = (card.dataset.category || '').split(' ');
+            if (cat === 'all' || cats.includes(cat)) {
+              card.style.display = 'block';
+              setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+              }, 10);
+            } else {
+              card.style.opacity = '0';
+              card.style.transform = 'scale(0.8)';
+              setTimeout(() => {
+                card.style.display = 'none';
+              }, 300);
+            }
+          });
+        };
+      });
+    }
+
+    // ================= 搜索 =================
+    function bindSearch() {
+      const input = document.getElementById('sIn');
+      const cards = document.querySelectorAll('.card');
+
+      input.oninput = (e) => {
+        const term = e.target.value.toLowerCase();
+        cards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          if (text.includes(term)) {
+            card.style.display = 'block';
+            setTimeout(() => { card.style.opacity = '1'; }, 10);
+          } else {
+            card.style.opacity = '0';
+            setTimeout(() => { card.style.display = 'none'; }, 300);
+          }
+        });
+      };
+    }
+
+    // ================= 初始化 =================
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTools();
+      updMemUI();
+    });
+
+    // ================= Service Worker 注册 =================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('assets/js/sw.js')
+          .then(reg => console.log('[SW] Registered:', reg.scope))
+          .catch(err => console.log('[SW] Registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

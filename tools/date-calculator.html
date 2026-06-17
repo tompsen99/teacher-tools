@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日期计算器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+      margin-top: var(--space-5);
+    }
+
+    .result-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .result-value {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin: var(--space-4) 0;
+    }
+
+    .result-label {
+      font-size: 1.1rem;
+      color: var(--text-light);
+    }
+
+    .detail-list {
+      text-align: left;
+      margin-top: var(--space-4);
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.95rem;
+    }
+
+    .detail-item:last-child { border-bottom: none; }
+
+    .calendar-mini {
+      margin-top: var(--space-4);
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+
+    .calendar-day {
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+    }
+
+    .calendar-day.header {
+      font-weight: 600;
+      color: var(--text-light);
+    }
+
+    .calendar-day.today {
+      background: var(--primary);
+      color: white;
+    }
+
+    .calendar-day.other-month {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>📅 日期计算器</h1>
+      <p style="color: var(--text-light);">计算日期间隔、推算未来/过去日期</p>
+    </div>
+
+    <div class="calculator-grid">
+      <!-- 日期间隔计算 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-exchange-alt"></i> 日期间隔</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">开始日期</label>
+          <input type="date" class="form-input" id="startDate" onchange="calculateDiff()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">结束日期</label>
+          <input type="date" class="form-input" id="endDate" onchange="calculateDiff()">
+        </div>
+        <div class="result-card" style="margin-top: var(--space-3);">
+          <div class="result-value" id="diffDays">-</div>
+          <div class="result-label">天</div>
+          <div class="detail-list" id="diffDetails"></div>
+        </div>
+      </div>
+
+      <!-- 日期推算 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-calculator"></i> 日期推算</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">起始日期</label>
+          <input type="date" class="form-input" id="baseDate" onchange="calculateFuture()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">推算方式</label>
+          <select class="form-select" id="calcType" onchange="calculateFuture()">
+            <option value="add">往后推</option>
+            <option value="subtract">往前推</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">天数</label>
+          <input type="number" class="form-input" id="calcDays" value="30" onchange="calculateFuture()">
+        </div>
+        <div class="result-card" style="margin-top: var(--space-3);">
+          <div class="result-value" id="futureDate" style="font-size: 1.5rem;">-</div>
+          <div class="result-label" id="futureWeekday"></div>
+          <div class="detail-list" id="futureDetails"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日信息 -->
+    <div class="card" style="margin-top: var(--space-5);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-info-circle"></i> 今日信息</div>
+      </div>
+      <div class="detail-list" id="todayInfo"></div>
+    </div>
+
+    <!-- 小日历 -->
+    <div class="card" style="margin-top: var(--space-4);">
+      <div class="calendar-mini">
+        <div class="calendar-header">
+          <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+          <span id="calendarTitle" style="font-weight: 600;"></span>
+          <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
+    // 初始化日期
+    function init() {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+
+      document.getElementById('startDate').value = todayStr;
+      document.getElementById('endDate').value = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      document.getElementById('baseDate').value = todayStr;
+
+      calculateDiff();
+      calculateFuture();
+      showTodayInfo();
+      renderCalendar();
+    }
+
+    // 计算日期间隔
+    function calculateDiff() {
+      const start = new Date(document.getElementById('startDate').value);
+      const end = new Date(document.getElementById('endDate').value);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        document.getElementById('diffDays').textContent = '-';
+        document.getElementById('diffDetails').innerHTML = '';
+        return;
+      }
+
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffWeeks = Math.floor(diffDays / 7);
+      const diffMonths = Math.floor(diffDays / 30.44);
+      const diffYears = Math.floor(diffDays / 365.25);
+
+      document.getElementById('diffDays').textContent = diffDays.toLocaleString();
+
+      document.getElementById('diffDetails').innerHTML = `
+        <div class="detail-item"><span>周数</span><span>${diffWeeks} 周</span></div>
+        <div class="detail-item"><span>月数（约）</span><span>${diffMonths} 个月</span></div>
+        <div class="detail-item"><span>年数（约）</span><span>${diffYears} 年</span></div>
+        <div class="detail-item"><span>小时</span><span>${(diffDays * 24).toLocaleString()} 小时</span></div>
+        <div class="detail-item"><span>分钟</span><span>${(diffDays * 24 * 60).toLocaleString()} 分钟</span></div>
+      `;
+    }
+
+    // 日期推算
+    function calculateFuture() {
+      const base = new Date(document.getElementById('baseDate').value);
+      const days = parseInt(document.getElementById('calcDays').value) || 0;
+      const type = document.getElementById('calcType').value;
+
+      if (isNaN(base.getTime())) {
+        document.getElementById('futureDate').textContent = '-';
+        return;
+      }
+
+      const result = new Date(base);
+      if (type === 'add') {
+        result.setDate(result.getDate() + days);
+      } else {
+        result.setDate(result.getDate() - days);
+      }
+
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+      document.getElementById('futureDate').textContent = result.toLocaleDateString('zh-CN');
+      document.getElementById('futureWeekday').textContent = weekdays[result.getDay()];
+
+      document.getElementById('futureDetails').innerHTML = `
+        <div class="detail-item"><span>农历（约）</span><span>${getLunarInfo(result)}</span></div>
+        <div class="detail-item"><span>距离今天</span><span>${getRelativeDay(result)}</span></div>
+      `;
+    }
+
+    function getLunarInfo(date) {
+      // 简化的农历信息
+      return '需专业库支持';
+    }
+
+    function getRelativeDay(date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      date.setHours(0, 0, 0, 0);
+
+      const diff = Math.floor((date - today) / (1000 * 60 * 60 * 24));
+
+      if (diff === 0) return '今天';
+      if (diff === 1) return '明天';
+      if (diff === -1) return '昨天';
+      if (diff > 0) return `${diff}天后`;
+      return `${Math.abs(diff)}天前`;
+    }
+
+    // 今日信息
+    function showTodayInfo() {
+      const today = new Date();
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+      const weekOfYear = Math.ceil(dayOfYear / 7);
+      const daysInYear = ((today.getFullYear() % 4 === 0 && today.getFullYear() % 100 !== 0) || today.getFullYear() % 400 === 0) ? 366 : 365;
+
+      document.getElementById('todayInfo').innerHTML = `
+        <div class="detail-item"><span>今天</span><span>${today.toLocaleDateString('zh-CN')} ${weekdays[today.getDay()]}</span></div>
+        <div class="detail-item"><span>今年第几天</span><span>第 ${dayOfYear} 天 / 共 ${daysInYear} 天</span></div>
+        <div class="detail-item"><span>今年第几周</span><span>第 ${weekOfYear} 周</span></div>
+        <div class="detail-item"><span>今年已过</span><span>${(dayOfYear / daysInYear * 100).toFixed(1)}%</span></div>
+        <div class="detail-item"><span>今年剩余</span><span>${daysInYear - dayOfYear} 天</span></div>
+        <div class="detail-item"><span>本月</span><span>${today.getMonth() + 1} 月</span></div>
+      `;
+    }
+
+    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+    // 日历
+    function renderCalendar() {
+      const title = document.getElementById('calendarTitle');
+      const grid = document.getElementById('calendarGrid');
+
+      title.textContent = `${currentYear}年 ${currentMonth + 1}月`;
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+      const today = new Date();
+
+      let html = '';
+
+      // 星期头
+      const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+      dayNames.forEach(d => {
+        html += `<div class="calendar-day header">${d}</div>`;
+      });
+
+      // 上月日期
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="calendar-day other-month">${daysInPrevMonth - i}</div>`;
+      }
+
+      // 本月日期
+      for (let i = 1; i <= daysInMonth; i++) {
+        const isToday = i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+        html += `<div class="calendar-day ${isToday ? 'today' : ''}">${i}</div>`;
+      }
+
+      // 下月日期
+      const totalCells = firstDay + daysInMonth;
+      const remaining = 42 - totalCells;
+      for (let i = 1; i <= remaining; i++) {
+        html += `<div class="calendar-day other-month">${i}</div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      currentMonth += delta;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      } else if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    }
+
+    // 初始化
+    init();
+  </script>
+  <div id="app-footer"></div>
+  <script>PageComponents.initPage({ title: '日期计算器', icon: 'fa-calendar-alt' });</script>
+</body>
+</html>

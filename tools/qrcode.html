@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码生成器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+      margin-top: var(--space-5);
+    }
+
+    .qr-preview {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      min-height: 400px;
+    }
+
+    #qrOutput {
+      max-width: 100%;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+    }
+
+    #qrOutput img, #qrOutput canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .qr-actions {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+      width: 100%;
+    }
+
+    .qr-actions .btn { flex: 1; }
+
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    .quick-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+
+    .quick-btn {
+      padding: var(--space-1) var(--space-3);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .quick-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>二维码生成器</h1>
+      <p style="color: var(--text-light);">输入内容，即时生成二维码</p>
+    </div>
+
+    <div class="content-grid">
+      <!-- 左侧设置 -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-edit"></i> 内容设置</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">二维码类型</label>
+            <select class="form-select" id="qrType" onchange="updateType()">
+              <option value="url">网址链接</option>
+              <option value="text">纯文本</option>
+              <option value="wifi">WiFi 连接</option>
+              <option value="vcard">名片 (vCard)</option>
+            </select>
+          </div>
+
+          <!-- 网址输入 -->
+          <div id="urlInput">
+            <div class="form-group">
+              <label class="form-label">网址</label>
+              <input type="url" class="form-input" id="inputUrl" placeholder="https://example.com" value="https://www.baidu.com" oninput="generate()">
+            </div>
+            <div class="quick-inputs">
+              <span class="quick-btn" onclick="setUrl('https://www.baidu.com')">百度</span>
+              <span class="quick-btn" onclick="setUrl('https://www.qq.com')">腾讯</span>
+              <span class="quick-btn" onclick="setUrl('https://www.taobao.com')">淘宝</span>
+            </div>
+          </div>
+
+          <!-- 文本输入 -->
+          <div id="textInput" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">文本内容</label>
+              <textarea class="form-textarea" id="inputText" rows="4" placeholder="输入任意文本" oninput="generate()"></textarea>
+            </div>
+          </div>
+
+          <!-- WiFi输入 -->
+          <div id="wifiInput" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">WiFi 名称 (SSID)</label>
+              <input type="text" class="form-input" id="inputWifiName" placeholder="WiFi名称" oninput="generate()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">WiFi 密码</label>
+              <input type="text" class="form-input" id="inputWifiPass" placeholder="WiFi密码" oninput="generate()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">加密方式</label>
+              <select class="form-select" id="inputWifiEnc" onchange="generate()">
+                <option value="WPA">WPA/WPA2</option>
+                <option value="WEP">WEP</option>
+                <option value="">无密码</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 名片输入 -->
+          <div id="vcardInput" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">姓名</label>
+              <input type="text" class="form-input" id="inputName" placeholder="张三" oninput="generate()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">电话</label>
+              <input type="tel" class="form-input" id="inputPhone" placeholder="13800138000" oninput="generate()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">邮箱</label>
+              <input type="email" class="form-input" id="inputEmail" placeholder="example@email.com" oninput="generate()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">公司</label>
+              <input type="text" class="form-input" id="inputCompany" placeholder="公司名称" oninput="generate()">
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-palette"></i> 样式设置</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">前景颜色</label>
+            <input type="color" class="form-color" id="fgColor" value="#000000" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">背景颜色</label>
+            <input type="color" class="form-color" id="bgColor" value="#ffffff" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">尺寸：<span id="sizeLabel">300</span>px</label>
+            <input type="range" id="qrSize" min="100" max="500" value="300" oninput="updateSize()">
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧预览 -->
+      <div class="qr-preview">
+        <div id="qrOutput">
+          <!-- 二维码将显示在这里 -->
+        </div>
+        <div class="qr-actions">
+          <button class="btn btn-primary" onclick="downloadQR('png')">
+            <i class="fas fa-download"></i> 下载 PNG
+          </button>
+          <button class="btn btn-secondary" onclick="downloadQR('svg')">
+            <i class="fas fa-download"></i> 下载 SVG
+          </button>
+          <button class="btn btn-success" onclick="printQR()">
+            <i class="fas fa-print"></i> 打印
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入 QRCode.js 库 -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <script>
+    let qrcode = null;
+
+    // 初始化
+    function init() {
+      // 等待库加载完成
+      if (typeof QRCode === 'undefined') {
+        // 如果库未加载，使用备用方案
+        console.warn('QRCode library not loaded, using fallback');
+      }
+      generate();
+    }
+
+    // 更新类型
+    function updateType() {
+      const type = document.getElementById('qrType').value;
+
+      document.getElementById('urlInput').style.display = type === 'url' ? 'block' : 'none';
+      document.getElementById('textInput').style.display = type === 'text' ? 'block' : 'none';
+      document.getElementById('wifiInput').style.display = type === 'wifi' ? 'block' : 'none';
+      document.getElementById('vcardInput').style.display = type === 'vcard' ? 'block' : 'none';
+
+      generate();
+    }
+
+    function setUrl(url) {
+      document.getElementById('inputUrl').value = url;
+      generate();
+    }
+
+    function updateSize() {
+      const size = document.getElementById('qrSize').value;
+      document.getElementById('sizeLabel').textContent = size;
+      generate();
+    }
+
+    // 获取内容
+    function getContent() {
+      const type = document.getElementById('qrType').value;
+
+      switch (type) {
+        case 'url':
+          return document.getElementById('inputUrl').value || 'https://example.com';
+
+        case 'text':
+          return document.getElementById('inputText').value || 'Hello World';
+
+        case 'wifi':
+          const name = document.getElementById('inputWifiName').value;
+          const pass = document.getElementById('inputWifiPass').value;
+          const enc = document.getElementById('inputWifiEnc').value;
+          if (!name) return 'WIFI:T:WPA;S:MyWiFi;P:password;;';
+          return `WIFI:T:${enc};S:${name};P:${pass};;`;
+
+        case 'vcard':
+          const vName = document.getElementById('inputName').value || '张三';
+          const phone = document.getElementById('inputPhone').value || '';
+          const email = document.getElementById('inputEmail').value || '';
+          const company = document.getElementById('inputCompany').value || '';
+          return `BEGIN:VCARD\nVERSION:3.0\nFN:${vName}\nTEL:${phone}\nEMAIL:${email}\nORG:${company}\nEND:VCARD`;
+
+        default:
+          return 'https://example.com';
+      }
+    }
+
+    // 生成二维码
+    function generate() {
+      const content = getContent();
+      const size = parseInt(document.getElementById('qrSize').value);
+      const fgColor = document.getElementById('fgColor').value;
+      const bgColor = document.getElementById('bgColor').value;
+
+      const container = document.getElementById('qrOutput');
+      container.innerHTML = '';
+
+      // 使用 canvas 方式生成
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      container.appendChild(canvas);
+
+      const ctx = canvas.getContext('2d');
+
+      // 简单的 QR Code 生成（使用第三方库或回退方案）
+      if (typeof QRCode !== 'undefined') {
+        // 使用 QRCode.js
+        try {
+          new QRCode(container, {
+            text: content,
+            width: size,
+            height: size,
+            colorDark: fgColor,
+            colorLight: bgColor,
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (e) {
+          console.error('QRCode generation failed:', e);
+          drawFallbackQR(ctx, size, fgColor, bgColor);
+        }
+      } else {
+        // 回退方案：使用在线API
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, 0, size, size);
+          ctx.drawImage(img, 0, 0, size, size);
+        };
+        img.onerror = function() {
+          drawFallbackQR(ctx, size, fgColor, bgColor);
+        };
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(content)}&color=${fgColor.slice(1)}&bgcolor=${bgColor.slice(1)}`;
+      }
+    }
+
+    // 回退绘制
+    function drawFallbackQR(ctx, size, fgColor, bgColor) {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = fgColor;
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('二维码生成中...', size / 2, size / 2);
+    }
+
+    // 下载二维码
+    function downloadQR(format) {
+      const container = document.getElementById('qrOutput');
+      const canvas = container.querySelector('canvas');
+      const img = container.querySelector('img');
+
+      if (format === 'svg') {
+        // SVG 格式下载
+        const content = getContent();
+        const svgStr = generateSVG(content, parseInt(document.getElementById('qrSize').value));
+        const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `二维码_${Date.now()}.svg`;
+        link.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      // PNG 格式下载
+      if (canvas) {
+        const link = document.createElement('a');
+        link.download = `二维码_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } else if (img) {
+        const link = document.createElement('a');
+        link.download = `二维码_${Date.now()}.png`;
+        link.href = img.src;
+        link.click();
+      }
+    }
+
+    // 生成简单SVG（备用）
+    function generateSVG(content, size) {
+      // 这里只是简单示例，实际应该使用完整的QR编码算法
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <rect width="${size}" height="${size}" fill="white"/>
+        <text x="${size/2}" y="${size/2}" text-anchor="middle" font-size="12">${content.substring(0, 20)}</text>
+      </svg>`;
+    }
+
+    // 打印二维码
+    function printQR() {
+      const container = document.getElementById('qrOutput');
+      const canvas = container.querySelector('canvas');
+      const img = container.querySelector('img');
+
+      let imgSrc = '';
+      if (canvas) {
+        imgSrc = canvas.toDataURL('image/png');
+      } else if (img) {
+        imgSrc = img.src;
+      }
+
+      if (!imgSrc) {
+        alert('请先生成二维码');
+        return;
+      }
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>打印二维码</title>
+          <style>
+            body {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+            }
+            img {
+              max-width: 300px;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${imgSrc}">
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            };
+          <\/script>
+        </body>
+        </html>
+      `);
+    }
+
+    // 启动
+    window.addEventListener('load', init);
+
+    PageComponents.initPage({ title: '二维码生成器', icon: 'fa-qrcode' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

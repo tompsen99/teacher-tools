@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>鸡兔同笼 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* 顶部标题 */
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    /* 题目设置 */
+    .problem-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .problem-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .problem-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .problem-inputs {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group label {
+      font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+    }
+
+    .input-group input {
+      width: 80px;
+      padding: 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+
+    /* 动画区域 */
+    .animation-area {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+    }
+
+    .stat-value.chicken-color { color: #f59e0b; }
+    .stat-value.rabbit-color { color: #8b5cf6; }
+    .stat-value.legs-color { color: #10b981; }
+
+    .stat-label {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* 动物展示区 */
+    .animals-container {
+      min-height: 300px;
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: linear-gradient(to bottom, #86efac, #4ade80);
+      border-radius: 0 0 16px 16px;
+    }
+
+    .animals-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      padding-bottom: 40px;
+    }
+
+    /* 动物卡片 */
+    .animal-card {
+      width: 80px;
+      height: 100px;
+      background: white;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.3s;
+      animation: popIn 0.3s ease;
+    }
+
+    .animal-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .animal-card.chicken {
+      border: 3px solid #fbbf24;
+    }
+
+    .animal-card.rabbit {
+      border: 3px solid #a78bfa;
+    }
+
+    .animal-emoji {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .animal-legs {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes popOut {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+
+    /* 腿数变化动画 */
+    .legs-change {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: 800;
+      pointer-events: none;
+      animation: floatUp 1s ease forwards;
+      z-index: 100;
+    }
+
+    .legs-change.add { color: #10b981; }
+    .legs-change.remove { color: #ef4444; }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-60px); opacity: 0; }
+    }
+
+    /* 控制按钮 */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .control-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .control-icon {
+      font-size: 2.5rem;
+    }
+
+    .control-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .control-subtitle {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-control {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-control:active {
+      transform: scale(0.95);
+    }
+
+    .btn-add {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .btn-add:hover {
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-remove {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn-remove:hover {
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    /* 解题思路 */
+    .solution-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .solution-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .solution-step {
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border-left: 4px solid #6366f1;
+    }
+
+    .solution-step.active {
+      background: #eef2ff;
+      border-left-color: #10b981;
+    }
+
+    .step-title {
+      font-weight: 600;
+      color: #6366f1;
+      margin-bottom: 4px;
+    }
+
+    .step-content {
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .highlight {
+      color: #6366f1;
+      font-weight: 700;
+    }
+
+    .highlight-green {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    .highlight-red {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    /* 快捷操作 */
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .btn-quick {
+      padding: 12px 20px;
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-quick:hover {
+      background: #4f46e5;
+      transform: translateY(-2px);
+    }
+
+    .btn-quick.secondary {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .btn-quick.secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* 答案显示 */
+    .answer-display {
+      text-align: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 16px;
+      color: white;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .answer-display.show {
+      display: block;
+      animation: popIn 0.5s ease;
+    }
+
+    .answer-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+      }
+
+      .problem-inputs {
+        flex-direction: column;
+      }
+
+      .stats-bar {
+        gap: 16px;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+      }
+
+      .animal-card {
+        width: 60px;
+        height: 80px;
+      }
+
+      .animal-emoji {
+        font-size: 2rem;
+      }
+    }
+
+    /* 希沃平板优化 */
+    @media (min-width: 1024px) {
+      .btn-control {
+        padding: 20px;
+        font-size: 1.5rem;
+      }
+
+      .btn-quick {
+        padding: 16px 24px;
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+  <div class="workspace">
+    <!-- 标题 -->
+    <div class="header">
+      <h1>🐔🐇 鸡兔同笼动画演示</h1>
+      <p>动手操作，理解鸡兔同笼问题</p>
+    </div>
+
+    <!-- 题目设置 -->
+    <div class="problem-card">
+      <div class="problem-header">
+        <div class="problem-title">📝 设置题目</div>
+        <div class="problem-inputs">
+          <div class="input-group">
+            <label>头有</label>
+            <input type="number" id="totalHeads" value="10" min="1" max="50" onchange="resetAll()">
+            <label>个</label>
+          </div>
+          <div class="input-group">
+            <label>腿有</label>
+            <input type="number" id="totalLegs" value="28" min="2" max="200" onchange="resetAll()">
+            <label>条</label>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: center; font-size: 1.2rem; color: #475569; padding: 12px; background: #f8fafc; border-radius: 12px;">
+        笼子里有 <span class="highlight" id="displayHeads">10</span> 个头，
+        <span class="highlight" id="displayLegs">28</span> 条腿，
+        请问鸡和兔各有几只？
+      </div>
+    </div>
+
+    <!-- 统计栏 -->
+    <div class="animation-area">
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-value chicken-color" id="chickenCount">0</div>
+          <div class="stat-label">🐔 鸡的数量</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value rabbit-color" id="rabbitCount">0</div>
+          <div class="stat-label">🐇 兔的数量</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value legs-color" id="currentLegs">0</div>
+          <div class="stat-label">🦵 当前腿数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="targetLegs" style="color: #6366f1;">28</div>
+          <div class="stat-label">🎯 目标腿数</div>
+        </div>
+      </div>
+
+      <!-- 动物展示区 -->
+      <div class="animals-container" id="animalsContainer">
+        <div class="animals-grid" id="animalsGrid">
+          <!-- 动物动态生成 -->
+        </div>
+        <div class="ground"></div>
+      </div>
+    </div>
+
+    <!-- 控制按钮 -->
+    <div class="controls">
+      <!-- 鸡的控制 -->
+      <div class="control-card">
+        <div class="control-header">
+          <div class="control-icon">🐔</div>
+          <div>
+            <div class="control-title">鸡</div>
+            <div class="control-subtitle">每只 2 条腿</div>
+          </div>
+        </div>
+        <div class="control-buttons">
+          <button class="btn-control btn-remove" onclick="removeChicken()">
+            <i class="fas fa-minus"></i> 减少
+          </button>
+          <button class="btn-control btn-add" onclick="addChicken()">
+            <i class="fas fa-plus"></i> 增加
+          </button>
+        </div>
+      </div>
+
+      <!-- 兔的控制 -->
+      <div class="control-card">
+        <div class="control-header">
+          <div class="control-icon">🐇</div>
+          <div>
+            <div class="control-title">兔</div>
+            <div class="control-subtitle">每只 4 条腿</div>
+          </div>
+        </div>
+        <div class="control-buttons">
+          <button class="btn-control btn-remove" onclick="removeRabbit()">
+            <i class="fas fa-minus"></i> 减少
+          </button>
+          <button class="btn-control btn-add" onclick="addRabbit()">
+            <i class="fas fa-plus"></i> 增加
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="problem-card">
+      <div class="problem-title" style="margin-bottom: 16px;">🎯 快捷操作</div>
+      <div class="quick-actions">
+        <button class="btn-quick" onclick="assumeAllChicken()">
+          🐔 假设全是鸡
+        </button>
+        <button class="btn-quick" onclick="assumeAllRabbit()">
+          🐇 假设全是兔
+        </button>
+        <button class="btn-quick" onclick="autoSolve()">
+          ✨ 自动求解
+        </button>
+        <button class="btn-quick secondary" onclick="resetAll()">
+          🔄 重新开始
+        </button>
+        <button class="btn-quick secondary" onclick="randomProblem()">
+          🎲 随机题目
+        </button>
+      </div>
+
+      <!-- 答案显示 -->
+      <div class="answer-display" id="answerDisplay">
+        <div class="answer-text" id="answerText"></div>
+      </div>
+    </div>
+
+    <!-- 解题思路 -->
+    <div class="solution-card">
+      <div class="solution-title">💡 解题思路</div>
+      <div id="solutionSteps">
+        <div class="solution-step active">
+          <div class="step-title">第一步：尝试</div>
+          <div class="step-content">
+            点击上方按钮，增减鸡和兔的数量，观察腿数变化。
+            <br>鸡有 <span class="highlight">2</span> 条腿，兔有 <span class="highlight">4</span> 条腿。
+          </div>
+        </div>
+        <div class="solution-step">
+          <div class="step-title">第二步：观察规律</div>
+          <div class="step-content" id="step2Content">
+            当你增加一只兔子，腿数会增加 <span class="highlight">2</span> 条（因为兔比鸡多2条腿）。
+          </div>
+        </div>
+        <div class="solution-step">
+          <div class="step-title">第三步：找到答案</div>
+          <div class="step-content" id="step3Content">
+            当腿数等于目标腿数时，你就找到了答案！
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 状态
+    let chickens = 0;
+    let rabbits = 0;
+
+    // 获取题目
+    function getProblem() {
+      return {
+        heads: parseInt(document.getElementById('totalHeads').value) || 10,
+        legs: parseInt(document.getElementById('totalLegs').value) || 28
+      };
+    }
+
+    // 更新显示
+    function updateDisplay() {
+      const problem = getProblem();
+      const currentLegs = chickens * 2 + rabbits * 4;
+      const targetLegs = problem.legs;
+
+      // 更新数字
+      document.getElementById('chickenCount').textContent = chickens;
+      document.getElementById('rabbitCount').textContent = rabbits;
+      document.getElementById('currentLegs').textContent = currentLegs;
+      document.getElementById('targetLegs').textContent = targetLegs;
+      document.getElementById('displayHeads').textContent = problem.heads;
+      document.getElementById('displayLegs').textContent = problem.legs;
+
+      // 更新动物展示
+      renderAnimals();
+
+      // 更新解题步骤
+      updateSolution(currentLegs, targetLegs, problem.heads);
+
+      // 检查是否找到答案
+      checkAnswer(currentLegs, targetLegs, problem.heads);
+    }
+
+    // 渲染动物
+    function renderAnimals() {
+      const grid = document.getElementById('animalsGrid');
+      let html = '';
+
+      // 渲染鸡
+      for (let i = 0; i < chickens; i++) {
+        html += `
+          <div class="animal-card chicken" onclick="removeChickenByIndex(${i})">
+            <div class="animal-emoji">🐔</div>
+            <div class="animal-legs">2条腿</div>
+          </div>
+        `;
+      }
+
+      // 渲染兔
+      for (let i = 0; i < rabbits; i++) {
+        html += `
+          <div class="animal-card rabbit" onclick="removeRabbitByIndex(${i})">
+            <div class="animal-emoji">🐇</div>
+            <div class="animal-legs">4条腿</div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    // 增加鸡
+    function addChicken() {
+      const problem = getProblem();
+      if (chickens + rabbits >= problem.heads) {
+        showMessage('已经超过总数了！');
+        return;
+      }
+      chickens++;
+      showLegsChange('+2', 'add');
+      updateDisplay();
+    }
+
+    // 减少鸡
+    function removeChicken() {
+      if (chickens <= 0) return;
+      chickens--;
+      showLegsChange('-2', 'remove');
+      updateDisplay();
+    }
+
+    // 增加兔
+    function addRabbit() {
+      const problem = getProblem();
+      if (chickens + rabbits >= problem.heads) {
+        showMessage('已经超过总数了！');
+        return;
+      }
+      rabbits++;
+      showLegsChange('+4', 'add');
+      updateDisplay();
+    }
+
+    // 减少兔
+    function removeRabbit() {
+      if (rabbits <= 0) return;
+      rabbits--;
+      showLegsChange('-4', 'remove');
+      updateDisplay();
+    }
+
+    // 点击动物移除
+    function removeChickenByIndex(index) {
+      removeChicken();
+    }
+
+    function removeRabbitByIndex(index) {
+      removeRabbit();
+    }
+
+    // 显示腿数变化
+    function showLegsChange(text, type) {
+      const container = document.getElementById('animalsContainer');
+      const change = document.createElement('div');
+      change.className = `legs-change ${type}`;
+      change.textContent = text;
+      change.style.left = '50%';
+      change.style.top = '50%';
+      change.style.transform = 'translateX(-50%)';
+      container.appendChild(change);
+
+      setTimeout(() => change.remove(), 1000);
+    }
+
+    // 显示消息
+    function showMessage(msg) {
+      const container = document.getElementById('animalsContainer');
+      const change = document.createElement('div');
+      change.className = 'legs-change';
+      change.textContent = msg;
+      change.style.left = '50%';
+      change.style.top = '50%';
+      change.style.transform = 'translateX(-50%)';
+      change.style.color = '#f59e0b';
+      change.style.fontSize = '1.2rem';
+      container.appendChild(change);
+
+      setTimeout(() => change.remove(), 1500);
+    }
+
+    // 假设全是鸡
+    function assumeAllChicken() {
+      const problem = getProblem();
+      chickens = problem.heads;
+      rabbits = 0;
+      updateDisplay();
+
+      // 高亮第一步
+      highlightStep(1);
+
+      // 显示提示
+      const currentLegs = chickens * 2;
+      const diff = problem.legs - currentLegs;
+      if (diff > 0) {
+        setTimeout(() => {
+          showMessage(`腿数少了 ${diff} 条，需要把一些鸡换成兔！`);
+        }, 500);
+      }
+    }
+
+    // 假设全是兔
+    function assumeAllRabbit() {
+      const problem = getProblem();
+      chickens = 0;
+      rabbits = problem.heads;
+      updateDisplay();
+
+      // 高亮第一步
+      highlightStep(1);
+
+      // 显示提示
+      const currentLegs = rabbits * 4;
+      const diff = currentLegs - problem.legs;
+      if (diff > 0) {
+        setTimeout(() => {
+          showMessage(`腿数多了 ${diff} 条，需要把一些兔换成鸡！`);
+        }, 500);
+      }
+    }
+
+    // 自动求解
+    function autoSolve() {
+      const problem = getProblem();
+
+      // 计算答案
+      // 设兔有x只，鸡有y只
+      // x + y = heads
+      // 4x + 2y = legs
+      // 解得：x = (legs - 2*heads) / 2
+      //        y = heads - x
+
+      const rabbitCount = (problem.legs - 2 * problem.heads) / 2;
+      const chickenCount = problem.heads - rabbitCount;
+
+      if (rabbitCount < 0 || chickenCount < 0 || rabbitCount % 1 !== 0) {
+        showMessage('这道题无解！');
+        return;
+      }
+
+      // 动画显示
+      chickens = 0;
+      rabbits = 0;
+      updateDisplay();
+
+      // 逐步添加
+      let addedChickens = 0;
+      let addedRabbits = 0;
+
+      const addNext = () => {
+        if (addedChickens < chickenCount) {
+          chickens++;
+          addedChickens++;
+          updateDisplay();
+          setTimeout(addNext, 200);
+        } else if (addedRabbits < rabbitCount) {
+          rabbits++;
+          addedRabbits++;
+          updateDisplay();
+          setTimeout(addNext, 200);
+        } else {
+          // 完成
+          showAnswer(chickenCount, rabbitCount);
+        }
+      };
+
+      setTimeout(addNext, 500);
+    }
+
+    // 显示答案
+    function showAnswer(chickenCount, rabbitCount) {
+      const display = document.getElementById('answerDisplay');
+      const text = document.getElementById('answerText');
+
+      display.classList.add('show');
+      text.innerHTML = `🎉 答案：鸡有 <span style="color: #fbbf24;">${chickenCount}</span> 只，兔有 <span style="color: #c4b5fd;">${rabbitCount}</span> 只`;
+
+      // 高亮第三步
+      highlightStep(3);
+    }
+
+    // 检查答案
+    function checkAnswer(currentLegs, targetLegs, totalHeads) {
+      if (currentLegs === targetLegs && chickens + rabbits === totalHeads) {
+        showAnswer(chickens, rabbits);
+      } else {
+        document.getElementById('answerDisplay').classList.remove('show');
+      }
+    }
+
+    // 更新解题步骤
+    function updateSolution(currentLegs, targetLegs, totalHeads) {
+      const step2 = document.getElementById('step2Content');
+      const step3 = document.getElementById('step3Content');
+
+      // 更新第二步
+      if (chickens + rabbits > 0) {
+        const diff = targetLegs - currentLegs;
+        if (diff > 0) {
+          step2.innerHTML = `当前腿数 <span class="highlight-red">${currentLegs}</span> 比目标 <span class="highlight-green">${targetLegs}</span> 少了 <span class="highlight">${diff}</span> 条。<br>
+          每把一只鸡换成兔，腿数增加 2 条。需要换 <span class="highlight">${Math.ceil(diff / 2)}</span> 只。`;
+          highlightStep(2);
+        } else if (diff < 0) {
+          step2.innerHTML = `当前腿数 <span class="highlight-red">${currentLegs}</span> 比目标 <span class="highlight-green">${targetLegs}</span> 多了 <span class="highlight">${Math.abs(diff)}</span> 条。<br>
+          每把一只兔换成鸡，腿数减少 2 条。需要换 <span class="highlight">${Math.ceil(Math.abs(diff) / 2)}</span> 只。`;
+          highlightStep(2);
+        } else if (chickens + rabbits === totalHeads) {
+          step2.innerHTML = `🎉 腿数刚好相等！你找到了答案！`;
+        }
+      }
+
+      // 更新第三步
+      if (currentLegs === targetLegs && chickens + rabbits === totalHeads) {
+        step3.innerHTML = `✅ 鸡有 <span class="highlight">${chickens}</span> 只，兔有 <span class="highlight">${rabbits}</span> 只。<br>
+        验算：${chickens} × 2 + ${rabbits} × 4 = ${chickens * 2 + rabbits * 4} ✓`;
+        highlightStep(3);
+      }
+    }
+
+    // 高亮步骤
+    function highlightStep(stepNum) {
+      document.querySelectorAll('.solution-step').forEach((step, i) => {
+        step.classList.toggle('active', i === stepNum - 1);
+      });
+    }
+
+    // 重置
+    function resetAll() {
+      chickens = 0;
+      rabbits = 0;
+      document.getElementById('answerDisplay').classList.remove('show');
+      highlightStep(1);
+      updateDisplay();
+    }
+
+    // 随机题目
+    function randomProblem() {
+      // 生成有整数解的题目
+      const chickenCount = Math.floor(Math.random() * 10) + 1;
+      const rabbitCount = Math.floor(Math.random() * 10) + 1;
+      const heads = chickenCount + rabbitCount;
+      const legs = chickenCount * 2 + rabbitCount * 4;
+
+      document.getElementById('totalHeads').value = heads;
+      document.getElementById('totalLegs').value = legs;
+
+      resetAll();
+    }
+
+    // 初始化
+    updateDisplay();
+  </script>
+  <div id="app-footer"></div>
+  <script>PageComponents.initPage({ title: '鸡兔同笼动画演示', icon: 'fa-egg' });</script>
+</body>
+</html>

@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云朵字编辑器 Pro | 教师工具站</title>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --radius-lg: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 顶部导航 */
+    .navbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo i { font-size: 1.4rem; }
+
+    .nav-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+    }
+
+    .page-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .page-tab {
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-light);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-tab:hover { background: var(--card); color: var(--text); }
+    .page-tab.active { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
+
+    .page-tab .close-tab {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+
+    .page-tab:hover .close-tab { opacity: 0.5; }
+    .page-tab .close-tab:hover { opacity: 1; background: var(--danger); color: #fff; }
+
+    .btn-add-page {
+      width: 28px;
+      height: 28px;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-add-page:hover { border-color: var(--primary); color: var(--primary); }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-free { background: #f1f5f9; color: var(--text-light); }
+    .status-pro { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #f1f5f9; }
+
+    .btn-gold {
+      background: linear-gradient(135deg, var(--warning), #d97706);
+      color: #fff;
+    }
+    .btn-gold:hover { opacity: 0.9; }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 主工作区 */
+    .workspace {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 57px);
+    }
+
+    /* 左侧边栏 */
+    .sidebar {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .panel-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title i { color: var(--primary); }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+      background: var(--card);
+    }
+
+    .form-input:focus,
+    .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+
+    .color-picker-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .color-picker {
+      width: 40px;
+      height: 40px;
+      padding: 2px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .color-hex {
+      flex: 1;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-row input[type="range"] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: var(--border);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .range-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--primary);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .range-value {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+      min-width: 45px;
+      text-align: right;
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-add:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+
+    /* 图层列表 */
+    .layer-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+    }
+
+    .layer-item {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+    }
+
+    .layer-item:last-child { border-bottom: none; }
+    .layer-item:hover { background: var(--bg); }
+    .layer-item.active { background: #eef2ff; border-left: 3px solid var(--primary); }
+
+    .layer-item .layer-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .layer-item .layer-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .layer-item:hover .layer-actions { opacity: 1; }
+
+    .layer-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .layer-btn:hover { background: var(--bg); color: var(--text); }
+    .layer-btn.delete:hover { color: var(--danger); }
+
+    .empty-layer {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-light);
+      font-size: 0.85rem;
+    }
+
+    /* 编辑面板 */
+    .edit-panel {
+      display: none;
+    }
+
+    .edit-panel.active { display: block; }
+
+    /* 右侧画布区域 */
+    .canvas-area {
+      display: flex;
+      flex-direction: column;
+      background: #f1f5f9;
+    }
+
+    .canvas-toolbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .paper-info {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .canvas-viewport {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      overflow: auto;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      box-shadow: var(--shadow-lg);
+      border-radius: 4px;
+    }
+
+    #mainCanvas {
+      background: #fff;
+      display: block;
+      cursor: default;
+    }
+
+    .canvas-tips {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .canvas-tips span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 弹窗 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      animation: modalIn 0.3s ease;
+    }
+
+    @keyframes modalIn {
+      from { transform: scale(0.95) translateY(10px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal h3 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      color: var(--text-light);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .modal-input:focus { border-color: var(--primary); }
+
+    .modal-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+
+    .modal-close {
+      margin-top: 12px;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .modal-message {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      min-height: 24px;
+      text-align: center;
+    }
+
+    /* 纸张选择弹窗 */
+    .paper-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .paper-option {
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .paper-option:hover { border-color: var(--primary-light); }
+    .paper-option.active { border-color: var(--primary); background: #eef2ff; }
+
+    .paper-option .paper-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .paper-option .paper-size {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .page-tabs { display: none; }
+    }
+
+    /* PDF质量选择样式 */
+    .quality-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .quality-option {
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quality-option:hover {
+      border-color: var(--primary-light);
+      background: #f8fafc;
+    }
+
+    .quality-option.active {
+      border-color: var(--primary);
+      background: #eef2ff;
+    }
+
+    .quality-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .quality-name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .quality-badge {
+      padding: 2px 10px;
+      background: linear-gradient(135deg, var(--warning), #d97706);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .quality-desc {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+
+    .quality-size {
+      font-size: 0.8rem;
+      color: var(--primary);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <!-- 主工作区 -->
+  <div class="workspace">
+    <!-- 左侧边栏 -->
+    <aside class="sidebar">
+      <!-- 添加元素 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fas fa-plus-circle"></i> 添加文字</div>
+        </div>
+        <div class="form-group">
+          <input type="text" class="form-input" id="txtInput" placeholder="输入文字内容" value="云朵字" maxlength="20">
+        </div>
+        <div class="form-group">
+          <div class="color-picker-row">
+            <input type="color" class="color-picker" id="colorPick" value="#FF4500">
+            <input type="text" class="form-input color-hex" id="colorHex" value="#FF4500" placeholder="#FF4500">
+          </div>
+        </div>
+        <div class="form-group">
+          <select class="form-select" id="fontPick">
+            <optgroup label="常用字体">
+              <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+              <option value="'SimSun', serif">宋体</option>
+              <option value="'KaiTi', serif">楷体</option>
+              <option value="'SimHei', sans-serif">黑体</option>
+              <option value="'FangSong', serif">仿宋</option>
+              <option value="'LiSu', serif">隶书</option>
+              <option value="'YouYuan', sans-serif">幼圆</option>
+              <option value="'STXihei', sans-serif">华文细黑</option>
+              <option value="'STKaiti', serif">华文楷体</option>
+              <option value="'STSong', serif">华文宋体</option>
+              <option value="'STFangsong', serif">华文仿宋</option>
+              <option value="'STLiti', serif">华文隶书</option>
+            </optgroup>
+            <optgroup label="英文字体">
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+              <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+              <option value="Impact, sans-serif">Impact</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">字体大小: <span id="sizeVal">100</span>px</label>
+          <div class="range-row">
+            <input type="range" id="sizeRange" min="20" max="400" value="100">
+            <span class="range-value" id="sizeDisplay">100</span>
+          </div>
+        </div>
+        <button class="btn-add" onclick="addObj()">
+          <i class="fas fa-plus"></i> 添加到画布
+        </button>
+      </div>
+
+      <!-- 图层列表 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fas fa-layer-group"></i> 图层列表</div>
+          <span style="font-size:0.75rem;color:var(--text-light)" id="layerCount">0 个元素</span>
+        </div>
+        <div class="layer-list" id="objList">
+          <div class="empty-layer">
+            <i class="fas fa-inbox" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:8px"></i>
+            暂无元素，请添加文字
+          </div>
+        </div>
+      </div>
+
+      <!-- 编辑面板 -->
+      <div class="panel edit-panel" id="editPanel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fas fa-edit"></i> 编辑选中</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">文字颜色</label>
+          <div class="color-picker-row">
+            <input type="color" class="color-picker" id="editColor" value="#FF4500">
+            <span style="font-size:0.8rem;color:var(--text-light)">云朵颜色</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">缩放: <span id="scaleVal">100</span>%</label>
+          <div class="range-row">
+            <input type="range" id="scaleRange" min="10" max="500" value="100">
+            <span class="range-value" id="scaleDisplay">100%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">旋转: <span id="rotVal">0</span>°</label>
+          <div class="range-row">
+            <input type="range" id="rotRange" min="-180" max="180" value="0">
+            <span class="range-value" id="rotDisplay">0°</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="width:100%" onclick="duplicateSelected()">
+          <i class="fas fa-copy"></i> 复制元素
+        </button>
+        <button class="btn btn-secondary" style="width:100%;margin-top:8px;background:#fee2e2;color:var(--danger);border-color:#fecaca" onclick="delObj()">
+          <i class="fas fa-trash"></i> 删除选中
+        </button>
+      </div>
+    </aside>
+
+    <!-- 右侧画布区域 -->
+    <section class="canvas-area">
+      <div class="canvas-toolbar">
+        <div class="toolbar-left">
+          <div class="paper-info">
+            <i class="fas fa-file"></i>
+            <span id="paperInfo">A4 纵向</span>
+          </div>
+          <button class="btn btn-secondary" onclick="showPaperModal()" style="padding:6px 12px;font-size:0.8rem">
+            <i class="fas fa-expand-arrows-alt"></i> 更换纸张
+          </button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-secondary" onclick="undoAction()" title="撤销 (Ctrl+Z)">
+            <i class="fas fa-undo"></i>
+          </button>
+          <button class="btn btn-secondary" onclick="redoAction()" title="重做 (Ctrl+Y)">
+            <i class="fas fa-redo"></i>
+          </button>
+          <button class="btn btn-secondary" onclick="clearCurrentPage()">
+            <i class="fas fa-eraser"></i> 清空
+          </button>
+          <button class="btn btn-primary" id="btnPng" onclick="exportPng()">
+            <i class="fas fa-image"></i> 导出 PNG
+          </button>
+          <button class="btn btn-primary" id="btnPdf" onclick="exportPdf()">
+            <i class="fas fa-file-pdf"></i> 导出 PDF
+          </button>
+        </div>
+      </div>
+      <div class="canvas-viewport">
+        <div class="canvas-wrapper">
+          <canvas id="mainCanvas"></canvas>
+        </div>
+      </div>
+      <div class="canvas-tips">
+        <span><i class="fas fa-mouse-pointer"></i> 点击选中元素</span>
+        <span><i class="fas fa-arrows-alt"></i> 拖拽移动位置</span>
+        <span><i class="fas fa-search-plus"></i> 滚轮缩放元素</span>
+        <span><i class="fas fa-sync-alt"></i> Shift+滚轮旋转</span>
+        <span><i class="fas fa-keyboard"></i> Delete 删除</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- 纸张选择弹窗 -->
+  <div class="modal-overlay" id="paperModal">
+    <div class="modal">
+      <h3>📐 选择纸张尺寸</h3>
+      <p>选择适合的打印纸张尺寸</p>
+      <div class="paper-grid">
+        <div class="paper-option active" data-paper="a4-portrait" onclick="selectPaper(this)">
+          <div class="paper-name">A4 纵向</div>
+          <div class="paper-size">210 × 297 mm</div>
+        </div>
+        <div class="paper-option" data-paper="a4-landscape" onclick="selectPaper(this)">
+          <div class="paper-name">A4 横向</div>
+          <div class="paper-size">297 × 210 mm</div>
+        </div>
+        <div class="paper-option" data-paper="a3-portrait" onclick="selectPaper(this)">
+          <div class="paper-name">A3 纵向</div>
+          <div class="paper-size">297 × 420 mm</div>
+        </div>
+        <div class="paper-option" data-paper="a3-landscape" onclick="selectPaper(this)">
+          <div class="paper-name">A3 横向</div>
+          <div class="paper-size">420 × 297 mm</div>
+        </div>
+        <div class="paper-option" data-paper="a5-portrait" onclick="selectPaper(this)">
+          <div class="paper-name">A5 纵向</div>
+          <div class="paper-size">148 × 210 mm</div>
+        </div>
+        <div class="paper-option" data-paper="letter" onclick="selectPaper(this)">
+          <div class="paper-name">Letter</div>
+          <div class="paper-size">216 × 279 mm</div>
+        </div>
+        <div class="paper-option" data-paper="legal" onclick="selectPaper(this)">
+          <div class="paper-name">Legal</div>
+          <div class="paper-size">216 × 356 mm</div>
+        </div>
+        <div class="paper-option" data-paper="square" onclick="selectPaper(this)">
+          <div class="paper-name">正方形</div>
+          <div class="paper-size">210 × 210 mm</div>
+        </div>
+      </div>
+      <button class="modal-btn" onclick="applyPaper()">应用</button>
+      <button class="modal-close" onclick="closePaperModal()">取消</button>
+    </div>
+  </div>
+
+  <!-- PDF导出质量选择弹窗 -->
+  <div class="modal-overlay" id="pdfQualityModal">
+    <div class="modal">
+      <h3>📄 导出 PDF 设置</h3>
+      <p>选择导出质量，高质量文件更大，压缩后文件更小</p>
+
+      <div class="quality-options">
+        <div class="quality-option active" data-quality="1" onclick="selectQuality(this)">
+          <div class="quality-header">
+            <div class="quality-name">🏆 无损质量</div>
+            <div class="quality-badge">推荐</div>
+          </div>
+          <div class="quality-desc">PNG 格式，100% 无损，文件较大</div>
+          <div class="quality-size">预估大小：约 2-5 MB/页</div>
+        </div>
+
+        <div class="quality-option" data-quality="0.95" onclick="selectQuality(this)">
+          <div class="quality-header">
+            <div class="quality-name">✨ 极高质量</div>
+          </div>
+          <div class="quality-desc">JPEG 95% 质量，几乎无损，文件略小</div>
+          <div class="quality-size">预估大小：约 1-3 MB/页</div>
+        </div>
+
+        <div class="quality-option" data-quality="0.85" onclick="selectQuality(this)">
+          <div class="quality-header">
+            <div class="quality-name">👍 高质量</div>
+          </div>
+          <div class="quality-desc">JPEG 85% 质量，视觉无差异，文件较小</div>
+          <div class="quality-size">预估大小：约 0.5-1.5 MB/页</div>
+        </div>
+
+        <div class="quality-option" data-quality="0.7" onclick="selectQuality(this)">
+          <div class="quality-header">
+            <div class="quality-name">📦 标准质量</div>
+          </div>
+          <div class="quality-desc">JPEG 70% 质量，轻微压缩痕迹，文件更小</div>
+          <div class="quality-size">预估大小：约 0.3-0.8 MB/页</div>
+        </div>
+
+        <div class="quality-option" data-quality="0.5" onclick="selectQuality(this)">
+          <div class="quality-header">
+            <div class="quality-name">🗜️ 压缩模式</div>
+          </div>
+          <div class="quality-desc">JPEG 50% 质量，有压缩痕迹，文件最小</div>
+          <div class="quality-size">预估大小：约 0.1-0.4 MB/页</div>
+        </div>
+      </div>
+
+      <button class="modal-btn" onclick="confirmExportPdf()">
+        <i class="fas fa-download"></i> 开始导出
+      </button>
+      <button class="modal-close" onclick="closePdfQualityModal()">取消</button>
+    </div>
+  </div>
+
+  <script>
+    // ================= 配置 =================
+    const USAGE_KEY = SITE_CONFIG.STORAGE.USAGE;
+
+    // 纸张尺寸配置 (像素，基于 96 DPI)
+    const PAPER_SIZES = {
+      'a4-portrait': { w: 794, h: 1123, name: 'A4 纵向', pdf: 'a4', orient: 'portrait' },
+      'a4-landscape': { w: 1123, h: 794, name: 'A4 横向', pdf: 'a4', orient: 'landscape' },
+      'a3-portrait': { w: 1123, h: 1587, name: 'A3 纵向', pdf: 'a3', orient: 'portrait' },
+      'a3-landscape': { w: 1587, h: 1123, name: 'A3 横向', pdf: 'a3', orient: 'landscape' },
+      'a5-portrait': { w: 559, h: 794, name: 'A5 纵向', pdf: 'a5', orient: 'portrait' },
+      'letter': { w: 816, h: 1056, name: 'Letter', pdf: 'letter', orient: 'portrait' },
+      'legal': { w: 816, h: 1344, name: 'Legal', pdf: 'legal', orient: 'portrait' },
+      'square': { w: 794, h: 794, name: '正方形', pdf: [210, 210], orient: 'portrait' }
+    };
+
+    // ================= 状态管理 =================
+    let currentPaper = 'a4-portrait';
+    let pages = [{ id: 1, objects: [], name: '第 1 页' }];
+    let currentPageIndex = 0;
+    let selected = null;
+    let dragging = false;
+    let dragOffset = { x: 0, y: 0 };
+    let idSeq = 0;
+    let undoStack = [];
+    let redoStack = [];
+    let selectedPdfQuality = 1; // 默认无损质量
+
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // ================= 云朵字对象 =================
+    class CloudObj {
+      constructor(txt, col, sz, font, x, y) {
+        this.id = ++idSeq;
+        this.txt = txt;
+        this.col = col;
+        this.sz = sz;
+        this.font = font;
+        this.x = x;
+        this.y = y;
+        this.sc = 1;
+        this.rot = 0;
+      }
+
+      // 获取变换后的边界框
+      getBounds(ctx) {
+        ctx.save();
+        ctx.font = `900 ${this.sz}px ${this.font}`;
+        const m = ctx.measureText(this.txt);
+        const w = m.width + this.sz * 0.6;
+        const h = this.sz * 1.3;
+        ctx.restore();
+        return { w: w * this.sc, h: h * this.sc };
+      }
+
+      draw(c) {
+        c.save();
+        c.translate(this.x, this.y);
+        c.rotate(this.rot * Math.PI / 180);
+        c.scale(this.sc, this.sc);
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.font = `900 ${this.sz}px ${this.font}`;
+        c.lineJoin = 'round';
+        c.lineCap = 'round';
+
+        // 外层描边（云朵效果）
+        c.strokeStyle = this.col;
+        c.lineWidth = this.sz * 0.45;
+        c.shadowColor = this.col;
+        c.shadowBlur = this.sz * 0.3;
+        c.strokeText(this.txt, 0, 0);
+
+        // 内层描边
+        c.shadowBlur = 0;
+        c.lineWidth = this.sz * 0.18;
+        c.strokeStyle = '#000';
+        c.strokeText(this.txt, 0, 0);
+
+        // 填充白色
+        c.fillStyle = '#FFF';
+        c.fillText(this.txt, 0, 0);
+
+        c.restore();
+
+        // 选中状态的边框
+        if (selected === this) {
+          c.save();
+          c.translate(this.x, this.y);
+          c.rotate(this.rot * Math.PI / 180);
+          c.scale(this.sc, this.sc);
+          c.font = `900 ${this.sz}px ${this.font}`;
+          const m = c.measureText(this.txt);
+          const w = m.width + this.sz * 0.6;
+          const h = this.sz * 1.3;
+          c.strokeStyle = '#6366f1';
+          c.lineWidth = 2 / this.sc;
+          c.setLineDash([6 / this.sc, 4 / this.sc]);
+          c.strokeRect(-w / 2, -h / 2, w, h);
+
+          // 旋转手柄
+          c.setLineDash([]);
+          c.fillStyle = '#6366f1';
+          c.beginPath();
+          c.arc(0, -h / 2 - 15 / this.sc, 5 / this.sc, 0, Math.PI * 2);
+          c.fill();
+          c.strokeStyle = '#6366f1';
+          c.lineWidth = 1.5 / this.sc;
+          c.beginPath();
+          c.moveTo(0, -h / 2);
+          c.lineTo(0, -h / 2 - 15 / this.sc);
+          c.stroke();
+
+          c.restore();
+        }
+      }
+
+      // 精确的点击检测（考虑旋转）
+      hit(px, py) {
+        // 将点击坐标转换到对象本地坐标系
+        const dx = px - this.x;
+        const dy = py - this.y;
+        const rad = -this.rot * Math.PI / 180;
+        const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+        const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+        ctx.save();
+        ctx.font = `900 ${this.sz}px ${this.font}`;
+        const m = ctx.measureText(this.txt);
+        const w = (m.width + this.sz * 0.6) * this.sc / 2;
+        const h = (this.sz * 1.3) * this.sc / 2;
+        ctx.restore();
+
+        return Math.abs(localX) <= w && Math.abs(localY) <= h;
+      }
+    }
+
+    // ================= 页面管理 =================
+    function getCurrentPage() {
+      return pages[currentPageIndex];
+    }
+
+    function getCurrentObjects() {
+      return getCurrentPage().objects;
+    }
+
+    function switchPage(index) {
+      if (index < 0 || index >= pages.length) return;
+      currentPageIndex = index;
+      selected = null;
+      renderPageTabs();
+      updateList();
+      updateEditPanel();
+      render();
+    }
+
+    function addPage() {
+      const newPage = {
+        id: pages.length + 1,
+        objects: [],
+        name: `第 ${pages.length + 1} 页`
+      };
+      pages.push(newPage);
+      switchPage(pages.length - 1);
+    }
+
+    function removePage(index) {
+      if (pages.length <= 1) {
+        alert('至少需要保留一页');
+        return;
+      }
+      if (!confirm(`确定删除 "${pages[index].name}"？`)) return;
+
+      pages.splice(index, 1);
+      if (currentPageIndex >= pages.length) {
+        currentPageIndex = pages.length - 1;
+      }
+      switchPage(currentPageIndex);
+    }
+
+    function renderPageTabs() {
+      const container = document.getElementById('pageTabs');
+      container.innerHTML = pages.map((page, i) => `
+        <button class="page-tab ${i === currentPageIndex ? 'active' : ''}" onclick="switchPage(${i})">
+          <span>${page.name}</span>
+          ${pages.length > 1 ? `<span class="close-tab" onclick="event.stopPropagation();removePage(${i})">×</span>` : ''}
+        </button>
+      `).join('');
+    }
+
+    // ================= 撤销/重做 =================
+    function saveState() {
+      const state = JSON.stringify(pages.map(p => ({
+        ...p,
+        objects: p.objects.map(o => ({ ...o }))
+      })));
+      undoStack.push(state);
+      if (undoStack.length > 50) undoStack.shift();
+      redoStack = [];
+    }
+
+    function undoAction() {
+      if (undoStack.length === 0) return;
+      const currentState = JSON.stringify(pages.map(p => ({
+        ...p,
+        objects: p.objects.map(o => ({ ...o }))
+      })));
+      redoStack.push(currentState);
+
+      const prevState = JSON.parse(undoStack.pop());
+      pages = prevState;
+      selected = null;
+      renderPageTabs();
+      updateList();
+      updateEditPanel();
+      render();
+    }
+
+    function redoAction() {
+      if (redoStack.length === 0) return;
+      const currentState = JSON.stringify(pages.map(p => ({
+        ...p,
+        objects: p.objects.map(o => ({ ...o }))
+      })));
+      undoStack.push(currentState);
+
+      const nextState = JSON.parse(redoStack.pop());
+      pages = nextState;
+      selected = null;
+      renderPageTabs();
+      updateList();
+      updateEditPanel();
+      render();
+    }
+
+    // ================= 核心操作 =================
+    function addObj() {
+      const paper = PAPER_SIZES[currentPaper];
+      const t = document.getElementById('txtInput').value.trim() || '文字';
+      const c = document.getElementById('colorHex').value;
+      const s = +document.getElementById('sizeRange').value;
+      const f = document.getElementById('fontPick').value;
+
+      saveState();
+      const o = new CloudObj(t, c, s, f, paper.w / 2 + (Math.random() - 0.5) * 200, paper.h / 2 + (Math.random() - 0.5) * 200);
+      getCurrentObjects().push(o);
+      select(o);
+      render();
+      updateList();
+    }
+
+    function select(o) {
+      selected = o;
+      updateList();
+      updateEditPanel();
+      render();
+    }
+
+    function delObj() {
+      if (!selected) return;
+      saveState();
+      const objs = getCurrentObjects();
+      const index = objs.indexOf(selected);
+      if (index > -1) objs.splice(index, 1);
+      selected = null;
+      updateEditPanel();
+      updateList();
+      render();
+    }
+
+    function duplicateSelected() {
+      if (!selected) return;
+      saveState();
+      const newObj = new CloudObj(
+        selected.txt,
+        selected.col,
+        selected.sz,
+        selected.font,
+        selected.x + 30,
+        selected.y + 30
+      );
+      newObj.sc = selected.sc;
+      newObj.rot = selected.rot;
+      getCurrentObjects().push(newObj);
+      select(newObj);
+      render();
+      updateList();
+    }
+
+    function clearCurrentPage() {
+      if (getCurrentObjects().length === 0) return;
+      if (!confirm('确定清空当前页面？')) return;
+      saveState();
+      getCurrentPage().objects = [];
+      selected = null;
+      updateEditPanel();
+      updateList();
+      render();
+    }
+
+    // ================= UI 更新 =================
+    function updateList() {
+      const objs = getCurrentObjects();
+      const el = document.getElementById('objList');
+      const countEl = document.getElementById('layerCount');
+      countEl.textContent = `${objs.length} 个元素`;
+
+      if (!objs.length) {
+        el.innerHTML = `
+          <div class="empty-layer">
+            <i class="fas fa-inbox" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:8px"></i>
+            暂无元素，请添加文字
+          </div>
+        `;
+        return;
+      }
+
+      el.innerHTML = objs.map(o => `
+        <div class="layer-item ${selected === o ? 'active' : ''}" onclick="selectById(${o.id})">
+          <span class="layer-name">${o.txt}</span>
+          <div class="layer-actions">
+            <button class="layer-btn" onclick="event.stopPropagation();moveLayer(${o.id}, -1)" title="上移">
+              <i class="fas fa-arrow-up"></i>
+            </button>
+            <button class="layer-btn" onclick="event.stopPropagation();moveLayer(${o.id}, 1)" title="下移">
+              <i class="fas fa-arrow-down"></i>
+            </button>
+            <button class="layer-btn delete" onclick="event.stopPropagation();deleteById(${o.id})" title="删除">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectById(id) {
+      const obj = getCurrentObjects().find(o => o.id === id);
+      if (obj) select(obj);
+    }
+
+    function deleteById(id) {
+      saveState();
+      const objs = getCurrentObjects();
+      const index = objs.findIndex(o => o.id === id);
+      if (index > -1) {
+        if (selected === objs[index]) selected = null;
+        objs.splice(index, 1);
+        updateEditPanel();
+        updateList();
+        render();
+      }
+    }
+
+    function moveLayer(id, direction) {
+      const objs = getCurrentObjects();
+      const index = objs.findIndex(o => o.id === id);
+      if (index < 0) return;
+
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= objs.length) return;
+
+      saveState();
+      [objs[index], objs[newIndex]] = [objs[newIndex], objs[index]];
+      updateList();
+      render();
+    }
+
+    function updateEditPanel() {
+      const panel = document.getElementById('editPanel');
+      if (!selected) {
+        panel.classList.remove('active');
+        return;
+      }
+
+      panel.classList.add('active');
+      document.getElementById('editColor').value = selected.col;
+      document.getElementById('scaleRange').value = Math.round(selected.sc * 100);
+      document.getElementById('scaleVal').textContent = Math.round(selected.sc * 100);
+      document.getElementById('scaleDisplay').textContent = Math.round(selected.sc * 100) + '%';
+      document.getElementById('rotRange').value = selected.rot;
+      document.getElementById('rotVal').textContent = selected.rot;
+      document.getElementById('rotDisplay').textContent = selected.rot + '°';
+    }
+
+    // ================= 画布渲染 =================
+    function resizeCanvas() {
+      const paper = PAPER_SIZES[currentPaper];
+      canvas.width = paper.w;
+      canvas.height = paper.h;
+      document.getElementById('paperInfo').textContent = paper.name;
+      render();
+    }
+
+    function render() {
+      const paper = PAPER_SIZES[currentPaper];
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, paper.w, paper.h);
+
+      // 绘制网格（可选）
+      drawGrid();
+
+      // 绘制所有对象
+      getCurrentObjects().forEach(o => o.draw(ctx));
+    }
+
+    function drawGrid() {
+      ctx.save();
+      ctx.strokeStyle = '#f0f0f0';
+      ctx.lineWidth = 0.5;
+      const step = 50;
+      const paper = PAPER_SIZES[currentPaper];
+
+      for (let x = step; x < paper.w; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, paper.h);
+        ctx.stroke();
+      }
+      for (let y = step; y < paper.h; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(paper.w, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ================= 交互事件（修复版） =================
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      const pos = getCanvasCoords(e);
+
+      // 从顶层向下检测
+      const objs = getCurrentObjects();
+      for (let i = objs.length - 1; i >= 0; i--) {
+        if (objs[i].hit(pos.x, pos.y)) {
+          select(objs[i]);
+          dragging = true;
+          dragOffset.x = pos.x - objs[i].x;
+          dragOffset.y = pos.y - objs[i].y;
+          canvas.style.cursor = 'grabbing';
+          return;
+        }
+      }
+      select(null);
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!dragging || !selected) {
+        // 更新光标样式
+        const pos = getCanvasCoords(e);
+        const objs = getCurrentObjects();
+        let hitSomething = false;
+        for (let i = objs.length - 1; i >= 0; i--) {
+          if (objs[i].hit(pos.x, pos.y)) {
+            canvas.style.cursor = 'grab';
+            hitSomething = true;
+            break;
+          }
+        }
+        if (!hitSomething) canvas.style.cursor = 'default';
+        return;
+      }
+
+      const pos = getCanvasCoords(e);
+      selected.x = pos.x - dragOffset.x;
+      selected.y = pos.y - dragOffset.y;
+      render();
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (dragging) {
+        dragging = false;
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      dragging = false;
+      canvas.style.cursor = 'default';
+    });
+
+    // 滚轮缩放和旋转
+    canvas.addEventListener('wheel', e => {
+      if (!selected) return;
+      e.preventDefault();
+
+      if (e.shiftKey) {
+        // Shift + 滚轮 = 旋转
+        selected.rot += e.deltaY > 0 ? 5 : -5;
+        selected.rot = Math.max(-180, Math.min(180, selected.rot));
+      } else {
+        // 普通滚轮 = 缩放
+        const delta = e.deltaY > 0 ? 0.95 : 1.05;
+        selected.sc *= delta;
+        selected.sc = Math.max(0.1, Math.min(8, selected.sc));
+      }
+
+      updateEditPanel();
+      render();
+    }, { passive: false });
+
+    // 键盘事件
+    document.addEventListener('keydown', e => {
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selected) {
+        e.preventDefault();
+        delObj();
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') {
+          e.preventDefault();
+          undoAction();
+        }
+        if (e.key === 'y') {
+          e.preventDefault();
+          redoAction();
+        }
+        if (e.key === 'd' && selected) {
+          e.preventDefault();
+          duplicateSelected();
+        }
+      }
+
+      // 方向键微调位置
+      if (selected && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        switch (e.key) {
+          case 'ArrowUp': selected.y -= step; break;
+          case 'ArrowDown': selected.y += step; break;
+          case 'ArrowLeft': selected.x -= step; break;
+          case 'ArrowRight': selected.x += step; break;
+        }
+        render();
+      }
+    });
+
+    // 编辑面板事件
+    document.getElementById('editColor').addEventListener('input', e => {
+      if (selected) {
+        selected.col = e.target.value;
+        render();
+      }
+    });
+
+    document.getElementById('scaleRange').addEventListener('input', e => {
+      if (selected) {
+        selected.sc = +e.target.value / 100;
+        document.getElementById('scaleVal').textContent = e.target.value;
+        document.getElementById('scaleDisplay').textContent = e.target.value + '%';
+        render();
+      }
+    });
+
+    document.getElementById('rotRange').addEventListener('input', e => {
+      if (selected) {
+        selected.rot = +e.target.value;
+        document.getElementById('rotVal').textContent = e.target.value;
+        document.getElementById('rotDisplay').textContent = e.target.value + '°';
+        render();
+      }
+    });
+
+    // 颜色同步
+    document.getElementById('colorPick').addEventListener('input', e => {
+      document.getElementById('colorHex').value = e.target.value;
+    });
+    document.getElementById('colorHex').addEventListener('input', e => {
+      if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+        document.getElementById('colorPick').value = e.target.value;
+      }
+    });
+
+    // 字体大小显示
+    document.getElementById('sizeRange').addEventListener('input', e => {
+      document.getElementById('sizeVal').textContent = e.target.value;
+      document.getElementById('sizeDisplay').textContent = e.target.value;
+    });
+
+    // ================= 纸张选择 =================
+    function showPaperModal() {
+      document.getElementById('paperModal').classList.add('active');
+    }
+
+    function closePaperModal() {
+      document.getElementById('paperModal').classList.remove('active');
+    }
+
+    function selectPaper(el) {
+      document.querySelectorAll('.paper-option').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function applyPaper() {
+      const selected = document.querySelector('.paper-option.active');
+      if (selected) {
+        currentPaper = selected.dataset.paper;
+        resizeCanvas();
+      }
+      closePaperModal();
+    }
+
+    // ================= 会员管理 =================
+    function getUsage() {
+      const today = new Date().toISOString().slice(0, 10);
+      let u = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+      if (u.date !== today) u = { date: today, png: 0, pdf: 0 };
+      return u;
+    }
+
+    function updateUI() {
+      const badge = document.getElementById('statusBadge');
+      const btnP = document.getElementById('btnPng');
+      const btnF = document.getElementById('btnPdf');
+      const u = getUsage();
+
+      if (member.isPro) {
+        badge.innerHTML = '<i class="fas fa-crown"></i> 会员用户';
+        badge.className = 'status-badge status-pro';
+        btnP.disabled = false;
+        btnF.disabled = false;
+      } else {
+        const pLeft = Math.max(0, 1 - u.png);
+        const fLeft = Math.max(0, 1 - u.pdf);
+        badge.innerHTML = '<i class="fas fa-lock"></i> 免费用户';
+        badge.className = 'status-badge status-free';
+        btnP.disabled = pLeft <= 0;
+        btnF.disabled = fLeft <= 0;
+      }
+    }
+
+    // ================= 导出功能 =================
+    function exportPng() {
+      const objs = getCurrentObjects();
+      if (!objs.length) return alert('画布为空');
+
+      const u = getUsage();
+      if (!member.isPro && u.png >= 1) {
+        alert('免费用户每日限导出 1 次 PNG。\n点击"激活会员"即可无限使用！');
+        openPayModal();
+        return;
+      }
+
+      const prev = selected;
+      selected = null;
+      render();
+
+      // 创建高质量导出
+      const link = document.createElement('a');
+      link.download = `云朵字_${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      if (!member.isPro) {
+        u.png++;
+        localStorage.setItem(USAGE_KEY, JSON.stringify(u));
+      }
+
+      selected = prev;
+      render();
+      updateUI();
+    }
+
+    // 显示PDF质量选择弹窗
+    function exportPdf() {
+      const totalPages = pages.length;
+      if (totalPages === 0) return alert('没有可导出的页面');
+
+      // 检查是否有内容
+      const hasContent = pages.some(p => p.objects.length > 0);
+      if (!hasContent) return alert('所有页面都是空的');
+
+      const u = getUsage();
+      if (!member.isPro && u.pdf >= 1) {
+        alert('免费用户每日限导出 1 次 PDF。\n点击"激活会员"即可无限使用！');
+        openPayModal();
+        return;
+      }
+
+      // 显示质量选择弹窗
+      document.getElementById('pdfQualityModal').classList.add('active');
+    }
+
+    // 选择质量
+    function selectQuality(el) {
+      document.querySelectorAll('.quality-option').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+      selectedPdfQuality = parseFloat(el.dataset.quality);
+    }
+
+    // 关闭质量选择弹窗
+    function closePdfQualityModal() {
+      document.getElementById('pdfQualityModal').classList.remove('active');
+    }
+
+    // 确认导出PDF
+    async function confirmExportPdf() {
+      closePdfQualityModal();
+
+      const u = getUsage();
+      if (!member.isPro && u.pdf >= 1) {
+        alert('免费用户每日限导出 1 次 PDF。');
+        openPayModal();
+        return;
+      }
+
+      // 显示导出进度
+      const btn = document.getElementById('btnPdf');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导出中...';
+      btn.disabled = true;
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const paperConfig = PAPER_SIZES[currentPaper];
+        const pdfFormat = paperConfig.pdf;
+        const orientation = paperConfig.orient;
+        const quality = selectedPdfQuality;
+
+        const pdf = new jsPDF({
+          orientation: orientation,
+          unit: 'mm',
+          format: Array.isArray(pdfFormat) ? pdfFormat : pdfFormat
+        });
+
+        const prevSelected = selected;
+        const prevPage = currentPageIndex;
+
+        for (let i = 0; i < pages.length; i++) {
+          if (i > 0) pdf.addPage();
+
+          // 切换到目标页面
+          currentPageIndex = i;
+          selected = null;
+          render();
+
+          // 根据质量选择格式
+          let imgData;
+          let format;
+          if (quality >= 1) {
+            // 无损 PNG
+            imgData = canvas.toDataURL('image/png');
+            format = 'PNG';
+          } else {
+            // JPEG 压缩
+            imgData = canvas.toDataURL('image/jpeg', quality);
+            format = 'JPEG';
+          }
+
+          // 计算 PDF 中的尺寸
+          const pdfWidth = orientation === 'portrait' ? 210 : 297;
+          const pdfHeight = orientation === 'portrait' ? 297 : 210;
+
+          // 对于自定义尺寸
+          if (Array.isArray(pdfFormat)) {
+            pdf.addImage(imgData, format, 0, 0, pdfFormat[0], pdfFormat[1]);
+          } else {
+            pdf.addImage(imgData, format, 0, 0, pdfWidth, pdfHeight);
+          }
+        }
+
+        // 恢复状态
+        currentPageIndex = prevPage;
+        selected = prevSelected;
+        render();
+
+        pdf.save(`云朵字_${Date.now()}.pdf`);
+
+        if (!member.isPro) {
+          u.pdf++;
+          localStorage.setItem(USAGE_KEY, JSON.stringify(u));
+        }
+
+        updateUI();
+      } catch (err) {
+        console.error('PDF导出失败:', err);
+        alert('PDF导出失败: ' + err.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // ================= 激活弹窗 (由 component.js 提供) =================
+    function openPayModal() {
+      PageComponents.openActivationModal();
+    }
+
+    function closePayModal() {
+      PageComponents.closeActivationModal();
+    }
+
+    async function doActivate() {
+      await PageComponents.doActivation();
+    }
+
+    // ================= 初始化 =================
+    document.addEventListener('DOMContentLoaded', () => {
+      initPage({
+        title: '云朵字编辑器 Pro',
+        icon: 'fa-cloud',
+        extraLeft: `
+          <div class="nav-divider"></div>
+          <div class="page-tabs" id="pageTabs"></div>
+          <button class="btn-add-page" onclick="addPage()" title="添加新页面">
+            <i class="fas fa-plus"></i>
+          </button>`
+      });
+      resizeCanvas();
+      renderPageTabs();
+      updateUI();
+      render();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>单位换算 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .converter-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+      margin-top: var(--space-5);
+    }
+
+    .converter-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .converter-input {
+      flex: 1;
+    }
+
+    .converter-input input {
+      width: 100%;
+      padding: var(--space-3);
+      font-size: 1.5rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .converter-input input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .converter-input select {
+      width: 100%;
+      margin-top: var(--space-2);
+    }
+
+    .swap-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--primary);
+      transition: all var(--transition);
+    }
+
+    .swap-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .category-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .category-tab {
+      padding: var(--space-2) var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .category-tab:hover {
+      border-color: var(--primary);
+    }
+
+    .category-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .quick-converts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+
+    .quick-item {
+      padding: var(--space-3);
+      background: var(--bg);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .quick-item:hover {
+      background: var(--primary-bg);
+    }
+
+    .quick-item .value {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .quick-item .desc {
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>📐 单位换算工具</h1>
+      <p style="color: var(--text-light);">常用单位快速换算</p>
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="category-tabs">
+      <div class="category-tab active" onclick="selectCategory('length')">
+        <i class="fas fa-ruler"></i> 长度
+      </div>
+      <div class="category-tab" onclick="selectCategory('weight')">
+        <i class="fas fa-weight"></i> 重量
+      </div>
+      <div class="category-tab" onclick="selectCategory('area')">
+        <i class="fas fa-vector-square"></i> 面积
+      </div>
+      <div class="category-tab" onclick="selectCategory('volume')">
+        <i class="fas fa-cube"></i> 体积
+      </div>
+      <div class="category-tab" onclick="selectCategory('temperature')">
+        <i class="fas fa-thermometer-half"></i> 温度
+      </div>
+      <div class="category-tab" onclick="selectCategory('time')">
+        <i class="fas fa-clock"></i> 时间
+      </div>
+      <div class="category-tab" onclick="selectCategory('speed')">
+        <i class="fas fa-tachometer-alt"></i> 速度
+      </div>
+      <div class="category-tab" onclick="selectCategory('data')">
+        <i class="fas fa-database"></i> 数据
+      </div>
+    </div>
+
+    <!-- 换算器 -->
+    <div class="converter-card">
+      <div class="converter-row">
+        <div class="converter-input">
+          <input type="number" id="inputValue" value="1" oninput="convert()">
+          <select id="fromUnit" onchange="convert()"></select>
+        </div>
+        <button class="swap-btn" onclick="swapUnits()">
+          <i class="fas fa-exchange-alt"></i>
+        </button>
+        <div class="converter-input">
+          <input type="number" id="outputValue" readonly>
+          <select id="toUnit" onchange="convert()"></select>
+        </div>
+      </div>
+
+      <div class="text-center" style="margin-top: var(--space-4);">
+        <button class="btn btn-primary" onclick="copyResult()">
+          <i class="fas fa-copy"></i> 复制结果
+        </button>
+      </div>
+    </div>
+
+    <!-- 常用换算 -->
+    <div class="card" style="margin-top: var(--space-4);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-star"></i> 常用换算</div>
+      </div>
+      <div class="quick-converts" id="quickConverts"></div>
+    </div>
+  </div>
+
+  <script>
+    const UNITS = {
+      length: {
+        name: '长度',
+        units: {
+          'mm': { name: '毫米', factor: 0.001 },
+          'cm': { name: '厘米', factor: 0.01 },
+          'dm': { name: '分米', factor: 0.1 },
+          'm': { name: '米', factor: 1 },
+          'km': { name: '千米', factor: 1000 },
+          'inch': { name: '英寸', factor: 0.0254 },
+          'ft': { name: '英尺', factor: 0.3048 },
+          'yd': { name: '码', factor: 0.9144 },
+          'mile': { name: '英里', factor: 1609.344 },
+          'li': { name: '里', factor: 500 },
+          'zhang': { name: '丈', factor: 3.333 },
+          'chi': { name: '尺', factor: 0.3333 },
+          'cun': { name: '寸', factor: 0.03333 }
+        },
+        quick: [
+          { from: 'cm', to: 'inch', value: 1 },
+          { from: 'm', to: 'ft', value: 1 },
+          { from: 'km', to: 'mile', value: 1 },
+          { from: 'chi', to: 'cm', value: 1 }
+        ]
+      },
+      weight: {
+        name: '重量',
+        units: {
+          'mg': { name: '毫克', factor: 0.000001 },
+          'g': { name: '克', factor: 0.001 },
+          'kg': { name: '千克', factor: 1 },
+          't': { name: '吨', factor: 1000 },
+          'oz': { name: '盎司', factor: 0.028349523 },
+          'lb': { name: '磅', factor: 0.453592 },
+          'jin': { name: '斤', factor: 0.5 },
+          'liang': { name: '两', factor: 0.05 }
+        },
+        quick: [
+          { from: 'kg', to: 'lb', value: 1 },
+          { from: 'jin', to: 'g', value: 1 },
+          { from: 'oz', to: 'g', value: 1 }
+        ]
+      },
+      area: {
+        name: '面积',
+        units: {
+          'mm2': { name: '平方毫米', factor: 0.000001 },
+          'cm2': { name: '平方厘米', factor: 0.0001 },
+          'dm2': { name: '平方分米', factor: 0.01 },
+          'm2': { name: '平方米', factor: 1 },
+          'ha': { name: '公顷', factor: 10000 },
+          'km2': { name: '平方千米', factor: 1000000 },
+          'acre': { name: '英亩', factor: 4046.86 },
+          'mu': { name: '亩', factor: 666.667 }
+        },
+        quick: [
+          { from: 'm2', to: 'mu', value: 1 },
+          { from: 'ha', to: 'mu', value: 1 },
+          { from: 'km2', to: 'ha', value: 1 }
+        ]
+      },
+      volume: {
+        name: '体积',
+        units: {
+          'ml': { name: '毫升', factor: 0.000001 },
+          'cl': { name: '厘升', factor: 0.00001 },
+          'l': { name: '升', factor: 0.001 },
+          'm3': { name: '立方米', factor: 1 },
+          'gal': { name: '加仑', factor: 0.003785 },
+          'qt': { name: '夸脱', factor: 0.000946 }
+        },
+        quick: [
+          { from: 'l', to: 'ml', value: 1 },
+          { from: 'gal', to: 'l', value: 1 }
+        ]
+      },
+      temperature: {
+        name: '温度',
+        units: {
+          'c': { name: '摄氏度', factor: null },
+          'f': { name: '华氏度', factor: null },
+          'k': { name: '开尔文', factor: null }
+        },
+        quick: [
+          { from: 'c', to: 'f', value: 0 },
+          { from: 'c', to: 'k', value: 0 }
+        ]
+      },
+      time: {
+        name: '时间',
+        units: {
+          'ms': { name: '毫秒', factor: 0.001 },
+          's': { name: '秒', factor: 1 },
+          'min': { name: '分钟', factor: 60 },
+          'h': { name: '小时', factor: 3600 },
+          'd': { name: '天', factor: 86400 },
+          'w': { name: '周', factor: 604800 },
+          'month': { name: '月(30天)', factor: 2592000 },
+          'y': { name: '年(365天)', factor: 31536000 }
+        },
+        quick: [
+          { from: 'h', to: 'min', value: 1 },
+          { from: 'd', to: 'h', value: 1 },
+          { from: 'w', to: 'd', value: 1 }
+        ]
+      },
+      speed: {
+        name: '速度',
+        units: {
+          'ms': { name: '米/秒', factor: 1 },
+          'kmh': { name: '千米/时', factor: 0.277778 },
+          'mph': { name: '英里/时', factor: 0.44704 },
+          'knot': { name: '节', factor: 0.514444 },
+          'mach': { name: '马赫', factor: 340.3 }
+        },
+        quick: [
+          { from: 'kmh', to: 'ms', value: 60 },
+          { from: 'ms', to: 'kmh', value: 1 }
+        ]
+      },
+      data: {
+        name: '数据存储',
+        units: {
+          'bit': { name: '比特', factor: 1 },
+          'byte': { name: '字节', factor: 8 },
+          'kb': { name: 'KB', factor: 8192 },
+          'mb': { name: 'MB', factor: 8388608 },
+          'gb': { name: 'GB', factor: 8589934592 },
+          'tb': { name: 'TB', factor: 8796093022208 }
+        },
+        quick: [
+          { from: 'mb', to: 'kb', value: 1 },
+          { from: 'gb', to: 'mb', value: 1 }
+        ]
+      }
+    };
+
+    let currentCategory = 'length';
+
+    function selectCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+      event.target.closest('.category-tab').classList.add('active');
+      updateUnits();
+      renderQuickConverts();
+      convert();
+    }
+
+    function updateUnits() {
+      const units = UNITS[currentCategory].units;
+      const fromSelect = document.getElementById('fromUnit');
+      const toSelect = document.getElementById('toUnit');
+
+      const options = Object.entries(units).map(([key, val]) =>
+        `<option value="${key}">${val.name}</option>`
+      ).join('');
+
+      fromSelect.innerHTML = options;
+      toSelect.innerHTML = options;
+
+      // 默认选择
+      const keys = Object.keys(units);
+      if (keys.length >= 2) {
+        fromSelect.value = keys[0];
+        toSelect.value = keys[3] || keys[1];
+      }
+    }
+
+    function convert() {
+      const input = parseFloat(document.getElementById('inputValue').value);
+      const from = document.getElementById('fromUnit').value;
+      const to = document.getElementById('toUnit').value;
+
+      if (isNaN(input)) {
+        document.getElementById('outputValue').value = '';
+        return;
+      }
+
+      let result;
+
+      if (currentCategory === 'temperature') {
+        result = convertTemperature(input, from, to);
+      } else {
+        const fromFactor = UNITS[currentCategory].units[from].factor;
+        const toFactor = UNITS[currentCategory].units[to].factor;
+        result = input * fromFactor / toFactor;
+      }
+
+      document.getElementById('outputValue').value = formatNumber(result);
+    }
+
+    function convertTemperature(value, from, to) {
+      // 先转换为摄氏度
+      let celsius;
+      switch(from) {
+        case 'c': celsius = value; break;
+        case 'f': celsius = (value - 32) * 5 / 9; break;
+        case 'k': celsius = value - 273.15; break;
+      }
+
+      // 再从摄氏度转换为目标
+      switch(to) {
+        case 'c': return celsius;
+        case 'f': return celsius * 9 / 5 + 32;
+        case 'k': return celsius + 273.15;
+      }
+    }
+
+    function formatNumber(num) {
+      if (Math.abs(num) < 0.0001 || Math.abs(num) > 999999999) {
+        return num.toExponential(6);
+      }
+      return parseFloat(num.toPrecision(10));
+    }
+
+    function swapUnits() {
+      const from = document.getElementById('fromUnit');
+      const to = document.getElementById('toUnit');
+      const temp = from.value;
+      from.value = to.value;
+      to.value = temp;
+      convert();
+    }
+
+    function copyResult() {
+      const value = document.getElementById('outputValue').value;
+      const unit = document.getElementById('toUnit');
+      const unitName = unit.options[unit.selectedIndex].text;
+      navigator.clipboard.writeText(`${value} ${unitName}`).then(() => {
+        alert('已复制！');
+      });
+    }
+
+    function renderQuickConverts() {
+      const quick = UNITS[currentCategory].quick;
+      const units = UNITS[currentCategory].units;
+      const container = document.getElementById('quickConverts');
+
+      container.innerHTML = quick.map(q => {
+        const result = currentCategory === 'temperature'
+          ? convertTemperature(q.value, q.from, q.to)
+          : q.value * units[q.from].factor / units[q.to].factor;
+
+        return `
+          <div class="quick-item" onclick="setQuickConvert('${q.from}', '${q.to}', ${q.value})">
+            <div class="value">${q.value} ${units[q.from].name} = ${formatNumber(result)} ${units[q.to].name}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setQuickConvert(from, to, value) {
+      document.getElementById('fromUnit').value = from;
+      document.getElementById('toUnit').value = to;
+      document.getElementById('inputValue').value = value;
+      convert();
+    }
+
+    // 初始化
+    updateUnits();
+    renderQuickConverts();
+    convert();
+  </script>
+  <div id="app-footer"></div>
+  <script>PageComponents.initPage({ title: '单位换算', icon: 'fa-exchange-alt' });</script>
+</body>
+</html>

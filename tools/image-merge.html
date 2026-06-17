@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片拼接工具 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .preview-area {
+      flex: 1;
+      padding: var(--space-4);
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    #mergeCanvas {
+      box-shadow: var(--shadow-xl);
+      max-width: 100%;
+      height: auto;
+      background: white;
+    }
+
+    .image-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .image-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2);
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .image-item:hover {
+      border-color: var(--primary-light);
+    }
+
+    .image-item.selected {
+      border-color: var(--primary);
+      background: var(--primary-bg);
+    }
+
+    .image-item img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+    }
+
+    .image-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .image-item .name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .image-item .size {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    .image-item .actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .image-item .actions button {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-item .actions button:hover {
+      background: var(--bg-secondary);
+      color: var(--text);
+    }
+
+    .image-item .actions button.delete:hover {
+      color: var(--danger);
+    }
+
+    .layout-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-2);
+    }
+
+    .layout-option {
+      padding: var(--space-3);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: center;
+      transition: all var(--transition-fast);
+    }
+
+    .layout-option:hover { border-color: var(--primary); }
+    .layout-option.active {
+      border-color: var(--primary);
+      background: var(--primary-bg);
+    }
+
+    .layout-option i {
+      font-size: 1.5rem;
+      color: var(--primary);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .layout-option span {
+      font-size: 0.75rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-8);
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: var(--space-3);
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-plus-circle"></i> 添加图片</div>
+        <div class="file-upload-area" id="uploadArea" style="padding: 16px; cursor: pointer;">
+          <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; color: var(--primary);"></i>
+          <p style="font-size: 0.85rem; margin: 8px 0;">点击或拖拽添加图片</p>
+          <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <i class="fas fa-layer-group"></i> 图片列表
+          <span style="margin-left: auto; font-size: 0.75rem; color: var(--text-muted);" id="imageCount">0 张</span>
+        </div>
+        <div class="image-list" id="imageList">
+          <div class="empty-state">
+            <i class="fas fa-images"></i>
+            <p>暂无图片</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="moveSelected(-1)">
+            <i class="fas fa-arrow-up"></i> 上移
+          </button>
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="moveSelected(1)">
+            <i class="fas fa-arrow-down"></i> 下移
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-th-large"></i> 拼接方式</div>
+        <div class="layout-options">
+          <div class="layout-option active" data-layout="vertical" onclick="selectLayout(this)">
+            <i class="fas fa-grip-lines-vertical"></i>
+            <span>纵向</span>
+          </div>
+          <div class="layout-option" data-layout="horizontal" onclick="selectLayout(this)">
+            <i class="fas fa-grip-lines"></i>
+            <span>横向</span>
+          </div>
+          <div class="layout-option" data-layout="grid" onclick="selectLayout(this)">
+            <i class="fas fa-th"></i>
+            <span>九宫格</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-cog"></i> 设置</div>
+        <div class="form-group">
+          <label class="form-label">间距 (px)</label>
+          <input type="number" class="form-input" id="spacing" value="10" min="0" max="50" onchange="mergeImages()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">背景颜色</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="color" id="bgColor" value="#ffffff" onchange="mergeImages()">
+            <label class="form-check">
+              <input type="checkbox" id="transparentBg" onchange="mergeImages()">
+              <span style="font-size: 0.85rem;">透明</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group" id="gridColsGroup" style="display: none;">
+          <label class="form-label">每行数量</label>
+          <select class="form-select" id="gridCols" onchange="mergeImages()">
+            <option value="2">2 列</option>
+            <option value="3" selected>3 列</option>
+            <option value="4">4 列</option>
+            <option value="5">5 列</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-download"></i> 导出</div>
+        <div class="form-group">
+          <label class="form-label">导出格式</label>
+          <select class="form-select" id="exportFormat">
+            <option value="png">PNG (无损)</option>
+            <option value="jpeg">JPEG (有损，文件更小)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;" onclick="exportImage()">
+          <i class="fas fa-download"></i> 导出图片
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="preview-area">
+        <canvas id="mergeCanvas" width="800" height="600"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let images = [];
+    let currentLayout = 'vertical';
+    let selectedIndex = -1;
+
+    const canvas = document.getElementById('mergeCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 上传区域
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = 'var(--primary)';
+      uploadArea.style.background = 'var(--primary-bg)';
+    });
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.borderColor = '';
+      uploadArea.style.background = '';
+    });
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = '';
+      uploadArea.style.background = '';
+      addFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', (e) => addFiles(e.target.files));
+
+    function addFiles(files) {
+      let loaded = 0;
+      const total = files.length;
+
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+
+        const img = new Image();
+        img.onload = () => {
+          images.push({
+            img,
+            name: file.name,
+            url: URL.createObjectURL(file)
+          });
+          loaded++;
+          if (loaded === total) {
+            renderList();
+            mergeImages();
+          }
+        };
+        img.src = URL.createObjectURL(file);
+      }
+    }
+
+    function renderList() {
+      const list = document.getElementById('imageList');
+      const count = document.getElementById('imageCount');
+      count.textContent = `${images.length} 张`;
+
+      if (images.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-images"></i>
+            <p>暂无图片</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = images.map((item, i) => `
+        <div class="image-item ${i === selectedIndex ? 'selected' : ''}" onclick="selectImage(${i})">
+          <img src="${item.url}" alt="${item.name}">
+          <div class="info">
+            <div class="name">${item.name}</div>
+            <div class="size">${item.img.width} × ${item.img.height}</div>
+          </div>
+          <div class="actions">
+            <button class="delete" onclick="event.stopPropagation(); removeImage(${i})" title="删除">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectImage(index) {
+      selectedIndex = index;
+      renderList();
+    }
+
+    function moveSelected(direction) {
+      if (selectedIndex < 0 || selectedIndex >= images.length) return;
+
+      const newIndex = selectedIndex + direction;
+      if (newIndex < 0 || newIndex >= images.length) return;
+
+      // 交换位置
+      const temp = images[selectedIndex];
+      images[selectedIndex] = images[newIndex];
+      images[newIndex] = temp;
+
+      selectedIndex = newIndex;
+      renderList();
+      mergeImages();
+    }
+
+    function removeImage(index) {
+      images.splice(index, 1);
+      if (selectedIndex >= images.length) {
+        selectedIndex = images.length - 1;
+      }
+      renderList();
+      mergeImages();
+    }
+
+    // 布局选择
+    function selectLayout(el) {
+      document.querySelectorAll('.layout-option').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+      currentLayout = el.dataset.layout;
+
+      document.getElementById('gridColsGroup').style.display =
+        currentLayout === 'grid' ? 'block' : 'none';
+
+      mergeImages();
+    }
+
+    // 合并图片
+    function mergeImages() {
+      if (images.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      const spacing = parseInt(document.getElementById('spacing').value) || 0;
+      const bgColor = document.getElementById('bgColor').value;
+      const transparentBg = document.getElementById('transparentBg').checked;
+      const gridCols = parseInt(document.getElementById('gridCols').value) || 3;
+
+      // 计算画布尺寸
+      let totalWidth, totalHeight;
+
+      if (currentLayout === 'vertical') {
+        totalWidth = Math.max(...images.map(i => i.img.width));
+        totalHeight = images.reduce((sum, i) => sum + i.img.height, 0) + spacing * (images.length - 1);
+      } else if (currentLayout === 'horizontal') {
+        totalWidth = images.reduce((sum, i) => sum + i.img.width, 0) + spacing * (images.length - 1);
+        totalHeight = Math.max(...images.map(i => i.img.height));
+      } else {
+        const rows = Math.ceil(images.length / gridCols);
+        const colWidth = Math.max(...images.map(i => i.img.width));
+        const rowHeight = Math.max(...images.map(i => i.img.height));
+        totalWidth = colWidth * gridCols + spacing * (gridCols - 1);
+        totalHeight = rowHeight * rows + spacing * (rows - 1);
+      }
+
+      // 设置画布尺寸
+      canvas.width = totalWidth;
+      canvas.height = totalHeight;
+
+      // 绘制背景
+      if (!transparentBg) {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
+      } else {
+        ctx.clearRect(0, 0, totalWidth, totalHeight);
+      }
+
+      // 绘制图片
+      let x = 0, y = 0;
+
+      if (currentLayout === 'vertical') {
+        for (const item of images) {
+          ctx.drawImage(item.img, 0, y);
+          y += item.img.height + spacing;
+        }
+      } else if (currentLayout === 'horizontal') {
+        for (const item of images) {
+          ctx.drawImage(item.img, x, 0);
+          x += item.img.width + spacing;
+        }
+      } else {
+        // 九宫格
+        const colWidth = Math.max(...images.map(i => i.img.width));
+        const rowHeight = Math.max(...images.map(i => i.img.height));
+
+        images.forEach((item, i) => {
+          const col = i % gridCols;
+          const row = Math.floor(i / gridCols);
+          const drawX = col * (colWidth + spacing);
+          const drawY = row * (rowHeight + spacing);
+          ctx.drawImage(item.img, drawX, drawY);
+        });
+      }
+    }
+
+    // 导出图片
+    function exportImage() {
+      if (images.length === 0) {
+        alert('请先添加图片');
+        return;
+      }
+
+      const format = document.getElementById('exportFormat').value;
+      const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+      const quality = format === 'jpeg' ? 0.92 : undefined;
+
+      const link = document.createElement('a');
+      link.download = `拼接图片_${Date.now()}.${format}`;
+      link.href = canvas.toDataURL(mimeType, quality);
+      link.click();
+    }
+
+    // 初始化
+    mergeImages();
+
+    PageComponents.initPage({ title: '图片拼接工具', icon: 'fa-images' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

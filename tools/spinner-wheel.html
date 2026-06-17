@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>幸运转盘 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+    }
+
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 57px);
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: var(--space-6) auto;
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      font-size: 2rem;
+      color: #fbbf24;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    #wheelCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), 0 0 80px rgba(251, 191, 36, 0.1);
+    }
+
+    .spin-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border: 4px solid #fff;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+      z-index: 5;
+    }
+
+    .spin-btn:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .spin-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: translate(-50%, -50%);
+    }
+
+    .options-panel {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+    }
+
+    .option-item input {
+      flex: 1;
+      padding: var(--space-2);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius);
+      color: white;
+    }
+
+    .option-item input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .option-item .color-input {
+      width: 36px;
+      height: 36px;
+      padding: 2px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .option-item .delete-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-item .delete-btn:hover {
+      background: rgba(239, 68, 68, 0.4);
+    }
+
+    .result-display {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fbbf24;
+      text-align: center;
+      margin: var(--space-4) 0;
+      min-height: 60px;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    }
+
+    .result-display.show {
+      animation: resultPop 0.5s ease;
+    }
+
+    @keyframes resultPop {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .preset-btns {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: var(--space-3);
+    }
+
+    .preset-btn {
+      padding: var(--space-1) var(--space-3);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-full);
+      color: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .preset-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <h1 style="color: #fff; text-align: center;">🎡 幸运转盘</h1>
+    <p style="color: rgba(255,255,255,0.6); text-align: center;">输入选项，转动转盘，随机选择</p>
+
+    <!-- 结果显示 -->
+    <div class="result-display" id="resultDisplay"></div>
+
+    <!-- 转盘 -->
+    <div class="wheel-container">
+      <div class="wheel-pointer">▼</div>
+      <canvas id="wheelCanvas" width="400" height="400"></canvas>
+      <button class="spin-btn" id="spinBtn" onclick="spin()">开始</button>
+    </div>
+
+    <!-- 预设 -->
+    <div class="preset-btns">
+      <button class="preset-btn" onclick="loadPreset('ab')">AB选择</button>
+      <button class="preset-btn" onclick="loadPreset('yesno')">是/否</button>
+      <button class="preset-btn" onclick="loadPreset('numbers')">数字1-10</button>
+      <button class="preset-btn" onclick="loadPreset('subjects')">学科</button>
+    </div>
+
+    <!-- 选项设置 -->
+    <div class="options-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3);">
+        <h3 style="color: #fff; margin: 0;">选项设置</h3>
+        <button class="btn btn-ghost btn-sm" style="color: rgba(255,255,255,0.7);" onclick="addOption()">
+          <i class="fas fa-plus"></i> 添加
+        </button>
+      </div>
+      <div id="optionsList"></div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#6366f1'];
+
+    let options = [
+      { text: '选项A', color: COLORS[0] },
+      { text: '选项B', color: COLORS[1] },
+      { text: '选项C', color: COLORS[2] },
+      { text: '选项D', color: COLORS[3] }
+    ];
+
+    let isSpinning = false;
+    let currentAngle = 0;
+
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 预设
+    function loadPreset(type) {
+      switch(type) {
+        case 'ab':
+          options = [
+            { text: 'A', color: COLORS[0] },
+            { text: 'B', color: COLORS[3] }
+          ];
+          break;
+        case 'yesno':
+          options = [
+            { text: '是', color: COLORS[3] },
+            { text: '否', color: COLORS[0] }
+          ];
+          break;
+        case 'numbers':
+          options = Array.from({length: 10}, (_, i) => ({
+            text: String(i + 1),
+            color: COLORS[i % COLORS.length]
+          }));
+          break;
+        case 'subjects':
+          options = ['语文', '数学', '英语', '科学', '体育', '音乐'].map((s, i) => ({
+            text: s,
+            color: COLORS[i % COLORS.length]
+          }));
+          break;
+      }
+      renderOptions();
+      drawWheel();
+    }
+
+    // 渲染选项列表
+    function renderOptions() {
+      const list = document.getElementById('optionsList');
+      list.innerHTML = options.map((opt, i) => `
+        <div class="option-item">
+          <input type="color" class="color-input" value="${opt.color}" onchange="updateOptionColor(${i}, this.value)">
+          <input type="text" value="${opt.text}" onchange="updateOptionText(${i}, this.value)" placeholder="选项${i+1}">
+          <button class="delete-btn" onclick="removeOption(${i})" ${options.length <= 2 ? 'disabled' : ''}>
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function addOption() {
+      if (options.length >= 10) {
+        alert('最多10个选项');
+        return;
+      }
+      options.push({
+        text: `选项${options.length + 1}`,
+        color: COLORS[options.length % COLORS.length]
+      });
+      renderOptions();
+      drawWheel();
+    }
+
+    function removeOption(index) {
+      if (options.length <= 2) return;
+      options.splice(index, 1);
+      renderOptions();
+      drawWheel();
+    }
+
+    function updateOptionText(index, value) {
+      options[index].text = value;
+      drawWheel();
+    }
+
+    function updateOptionColor(index, value) {
+      options[index].color = value;
+      drawWheel();
+    }
+
+    // 绘制转盘
+    function drawWheel() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 180;
+      const sliceAngle = (2 * Math.PI) / options.length;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      options.forEach((opt, i) => {
+        const startAngle = currentAngle + i * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
+
+        // 绘制扇形
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = opt.color;
+        ctx.fill();
+
+        // 绘制边框
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 绘制文字
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(startAngle + sliceAngle / 2);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText(opt.text, radius * 0.6, 0);
+        ctx.restore();
+      });
+
+      // 绘制中心圆
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 25, 0, 2 * Math.PI);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // 转动转盘
+    function spin() {
+      if (isSpinning) return;
+      if (options.length < 2) return;
+
+      isSpinning = true;
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('resultDisplay').textContent = '';
+      document.getElementById('resultDisplay').classList.remove('show');
+
+      const spinAngle = Math.random() * 360 + 1440; // 至少转4圈
+      const duration = 3000;
+      const startTime = Date.now();
+      const startAngle = currentAngle;
+
+      function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // 缓动函数
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+
+        currentAngle = startAngle + (spinAngle * easeOut * Math.PI / 180);
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isSpinning = false;
+          document.getElementById('spinBtn').disabled = false;
+
+          // 计算结果
+          const normalizedAngle = ((currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+          const sliceAngle = (2 * Math.PI) / options.length;
+          const resultIndex = Math.floor(((2 * Math.PI - normalizedAngle + Math.PI / 2) % (2 * Math.PI)) / sliceAngle) % options.length;
+
+          const result = options[resultIndex].text;
+          const display = document.getElementById('resultDisplay');
+          display.textContent = `🎉 ${result}`;
+          display.classList.add('show');
+
+          // 播放音效
+          playSound();
+        }
+      }
+
+      animate();
+    }
+
+    function playSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.2);
+      } catch (e) {}
+    }
+
+    // 初始化
+    renderOptions();
+    drawWheel();
+    PageComponents.initPage({ title: '幸运转盘', icon: 'fa-sync-alt' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>评语生成器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: var(--space-5);
+      margin-top: var(--space-5);
+    }
+
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+
+    .tag {
+      padding: var(--space-1) var(--space-3);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .tag:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tag.selected {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .comment-preview {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      min-height: 300px;
+      box-shadow: var(--shadow);
+    }
+
+    .comment-text {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .comment-text .highlight {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .batch-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-top: var(--space-3);
+    }
+
+    .batch-item {
+      padding: var(--space-2) var(--space-3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .batch-item:last-child { border-bottom: none; }
+    .batch-item:hover { background: var(--bg); }
+    .batch-item.active { background: var(--primary-bg); color: var(--primary); }
+
+    .batch-item .delete {
+      color: var(--danger);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .batch-item:hover .delete { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>📝 学生评语生成器</h1>
+      <p style="color: var(--text-light);">选择标签，一键生成个性化评语</p>
+    </div>
+
+    <div class="content-grid">
+      <!-- 左侧设置 -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-user"></i> 学生信息</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">学生姓名</label>
+            <input type="text" class="form-input" id="studentName" placeholder="输入姓名" value="张三">
+          </div>
+          <div class="form-group">
+            <label class="form-label">性别</label>
+            <select class="form-select" id="gender">
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-star"></i> 学习表现</div>
+          </div>
+          <div class="tag-cloud" id="studyTags">
+            <span class="tag" data-tag="成绩优异">成绩优异</span>
+            <span class="tag" data-tag="学习认真">学习认真</span>
+            <span class="tag" data-tag="进步明显">进步明显</span>
+            <span class="tag" data-tag="勤奋刻苦">勤奋刻苦</span>
+            <span class="tag" data-tag="思维活跃">思维活跃</span>
+            <span class="tag" data-tag="善于思考">善于思考</span>
+            <span class="tag" data-tag="基础扎实">基础扎实</span>
+            <span class="tag" data-tag="需要努力">需要努力</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-heart"></i> 品德表现</div>
+          </div>
+          <div class="tag-cloud" id="moralTags">
+            <span class="tag" data-tag="尊敬师长">尊敬师长</span>
+            <span class="tag" data-tag="团结同学">团结同学</span>
+            <span class="tag" data-tag="乐于助人">乐于助人</span>
+            <span class="tag" data-tag="诚实守信">诚实守信</span>
+            <span class="tag" data-tag="遵守纪律">遵守纪律</span>
+            <span class="tag" data-tag="积极向上">积极向上</span>
+            <span class="tag" data-tag="责任心强">责任心强</span>
+            <span class="tag" data-tag="有礼貌">有礼貌</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-running"></i> 其他方面</div>
+          </div>
+          <div class="tag-cloud" id="otherTags">
+            <span class="tag" data-tag="热爱运动">热爱运动</span>
+            <span class="tag" data-tag="兴趣广泛">兴趣广泛</span>
+            <span class="tag" data-tag="动手能力强">动手能力强</span>
+            <span class="tag" data-tag="有创造力">有创造力</span>
+            <span class="tag" data-tag="表达能力强">表达能力强</span>
+            <span class="tag" data-tag="有领导力">有领导力</span>
+            <span class="tag" data-tag="团队合作好">团队合作好</span>
+            <span class="tag" data-tag="多才多艺">多才多艺</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-exclamation-circle"></i> 需要改进</div>
+          </div>
+          <div class="tag-cloud" id="improveTags">
+            <span class="tag" data-tag="上课要更专注">上课要更专注</span>
+            <span class="tag" data-tag="作业要认真完成">作业要认真完成</span>
+            <span class="tag" data-tag="多参加集体活动">多参加集体活动</span>
+            <span class="tag" data-tag="加强体育锻炼">加强体育锻炼</span>
+            <span class="tag" data-tag="提高书写水平">提高书写水平</span>
+            <span class="tag" data-tag="增强自信心">增强自信心</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width: 100%; margin-top: var(--space-4);" onclick="generateComment()">
+          <i class="fas fa-magic"></i> 生成评语
+        </button>
+
+        <button class="btn btn-secondary" style="width: 100%; margin-top: var(--space-2);" onclick="randomComment()">
+          <i class="fas fa-random"></i> 随机生成
+        </button>
+      </div>
+
+      <!-- 右侧预览 -->
+      <div>
+        <div class="comment-preview">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+            <h3>评语预览</h3>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="copyComment()">
+                <i class="fas fa-copy"></i> 复制
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="exportComment()">
+                <i class="fas fa-download"></i> 导出
+              </button>
+            </div>
+          </div>
+          <div class="comment-text" id="commentOutput">
+            点击"生成评语"按钮，或选择标签后自动生成...
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-history"></i> 评语历史</div>
+            <button class="btn btn-ghost btn-sm" onclick="clearHistory()">清空</button>
+          </div>
+          <div id="historyList" style="max-height: 200px; overflow-y: auto;">
+            <p style="color: var(--text-muted); text-align: center; padding: 20px;">暂无历史记录</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedTags = [];
+    let history = [];
+
+    // 标签点击事件
+    document.querySelectorAll('.tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        tag.classList.toggle('selected');
+        updateSelectedTags();
+        generateComment();
+      });
+    });
+
+    function updateSelectedTags() {
+      selectedTags = [];
+      document.querySelectorAll('.tag.selected').forEach(tag => {
+        selectedTags.push(tag.dataset.tag);
+      });
+    }
+
+    // 生成评语
+    function generateComment() {
+      const name = document.getElementById('studentName').value || '该同学';
+      const gender = document.getElementById('gender').value;
+      const pronoun = gender === 'male' ? '他' : '她';
+
+      if (selectedTags.length === 0) {
+        document.getElementById('commentOutput').textContent = '请先选择一些标签...';
+        return;
+      }
+
+      // 按类别分组标签
+      const studyTags = [];
+      const moralTags = [];
+      const otherTags = [];
+      const improveTags = [];
+
+      document.querySelectorAll('#studyTags .tag.selected').forEach(t => studyTags.push(t.dataset.tag));
+      document.querySelectorAll('#moralTags .tag.selected').forEach(t => moralTags.push(t.dataset.tag));
+      document.querySelectorAll('#otherTags .tag.selected').forEach(t => otherTags.push(t.dataset.tag));
+      document.querySelectorAll('#improveTags .tag.selected').forEach(t => improveTags.push(t.dataset.tag));
+
+      // 构建评语
+      let comment = '';
+
+      // 开头
+      const openings = [
+        `${name}同学`,
+        `${name}是一个`,
+        `本学期，${name}`
+      ];
+      comment += openings[Math.floor(Math.random() * openings.length)];
+
+      // 学习表现
+      if (studyTags.length > 0) {
+        const studySentences = [
+          `在学习方面，${pronoun}${studyTags.join('、')}。`,
+          `${pronoun}学习${studyTags[0]}${studyTags.length > 1 ? '，' + studyTags.slice(1).join('、') : ''}。`,
+          `${studyTags.join('、')}是${pronoun}的优秀品质。`
+        ];
+        comment += studySentences[Math.floor(Math.random() * studySentences.length)];
+      }
+
+      // 品德表现
+      if (moralTags.length > 0) {
+        const moralSentences = [
+          `在品德方面，${pronoun}${moralTags.join('、')}。`,
+          `${pronoun}是一个${moralTags.join('、')}的好学生。`,
+          `${moralTags.join('、')}，深受老师和同学的喜爱。`
+        ];
+        comment += moralSentences[Math.floor(Math.random() * moralSentences.length)];
+      }
+
+      // 其他方面
+      if (otherTags.length > 0) {
+        const otherSentences = [
+          `此外，${pronoun}${otherTags.join('、')}。`,
+          `${pronoun}还${otherTags.join('、')}，全面发展。`,
+          `${otherTags.join('、')}，展现出多方面的才能。`
+        ];
+        comment += otherSentences[Math.floor(Math.random() * otherSentences.length)];
+      }
+
+      // 需要改进
+      if (improveTags.length > 0) {
+        const improveSentences = [
+          `希望今后${pronoun}能${improveTags.join('、')}。`,
+          `老师相信${pronoun}如果能${improveTags.join('、')}，一定会更加优秀。`,
+          `期待${pronoun}${improveTags.join('、')}，取得更大进步。`
+        ];
+        comment += improveSentences[Math.floor(Math.random() * improveSentences.length)];
+      }
+
+      // 结尾
+      const endings = [
+        `继续加油！`,
+        `老师期待你更好的表现！`,
+        `相信你会越来越棒！`,
+        `加油，未来可期！`,
+        `祝你学业进步，快乐成长！`
+      ];
+      comment += endings[Math.floor(Math.random() * endings.length)];
+
+      document.getElementById('commentOutput').textContent = comment;
+
+      // 添加到历史
+      addToHistory(name, comment);
+    }
+
+    // 随机生成
+    function randomComment() {
+      // 随机选择标签
+      document.querySelectorAll('.tag').forEach(tag => {
+        tag.classList.remove('selected');
+        if (Math.random() > 0.6) {
+          tag.classList.add('selected');
+        }
+      });
+      updateSelectedTags();
+      generateComment();
+    }
+
+    // 添加到历史
+    function addToHistory(name, comment) {
+      history.unshift({ name, comment, time: new Date().toLocaleTimeString() });
+      if (history.length > 20) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      if (history.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">暂无历史记录</p>';
+        return;
+      }
+
+      list.innerHTML = history.map((item, i) => `
+        <div class="batch-item" onclick="loadHistory(${i})">
+          <span>${item.name} - ${item.time}</span>
+          <span class="delete" onclick="event.stopPropagation(); removeHistory(${i})">
+            <i class="fas fa-times"></i>
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function loadHistory(index) {
+      document.getElementById('commentOutput').textContent = history[index].comment;
+    }
+
+    function removeHistory(index) {
+      history.splice(index, 1);
+      renderHistory();
+    }
+
+    function clearHistory() {
+      history = [];
+      renderHistory();
+    }
+
+    // 复制评语
+    function copyComment() {
+      const text = document.getElementById('commentOutput').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已复制到剪贴板！');
+      });
+    }
+
+    // 导出评语
+    function exportComment() {
+      const text = document.getElementById('commentOutput').textContent;
+      const name = document.getElementById('studentName').value || '学生';
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${name}评语.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    PageComponents.initPage({ title: '评语生成器', icon: 'fa-comment-dots' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

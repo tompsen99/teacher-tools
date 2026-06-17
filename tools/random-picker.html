@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>随机点名器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+      min-height: calc(100vh - 57px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+    }
+
+    .name-display {
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--primary);
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: var(--space-6) 0;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all 0.1s;
+    }
+
+    .name-display.rolling {
+      animation: textGlitch 0.1s infinite;
+    }
+
+    @keyframes textGlitch {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .controls {
+      display: flex;
+      gap: var(--space-4);
+      justify-content: center;
+      margin-bottom: var(--space-6);
+    }
+
+    .btn-start {
+      width: 200px;
+      height: 60px;
+      font-size: 1.3rem;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-start:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-start:active {
+      transform: translateY(0);
+    }
+
+    .btn-start.running {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .history-panel {
+      margin-top: var(--space-6);
+      text-align: left;
+    }
+
+    .history-title {
+      font-weight: 600;
+      margin-bottom: var(--space-3);
+      color: var(--text-secondary);
+    }
+
+    .history-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .history-tag {
+      padding: var(--space-1) var(--space-3);
+      background: var(--primary-bg);
+      color: var(--primary);
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+    }
+
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: var(--space-2);
+      margin-top: var(--space-4);
+      max-height: 300px;
+      overflow-y: auto;
+      padding: var(--space-3);
+      background: var(--bg);
+      border-radius: var(--radius);
+    }
+
+    .student-chip {
+      padding: var(--space-2);
+      background: var(--card);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .student-chip:hover {
+      background: var(--primary-bg);
+      color: var(--primary);
+    }
+
+    .student-chip.picked {
+      background: var(--primary);
+      color: white;
+    }
+
+    .settings-row {
+      display: flex;
+      gap: var(--space-4);
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .mode-switch {
+      display: flex;
+      background: var(--bg);
+      border-radius: var(--radius-full);
+      padding: 4px;
+    }
+
+    .mode-btn {
+      padding: var(--space-2) var(--space-4);
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+    }
+
+    .mode-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .textarea-container {
+      margin-top: var(--space-4);
+    }
+
+    .textarea-container textarea {
+      width: 100%;
+      height: 150px;
+      padding: var(--space-3);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      resize: vertical;
+    }
+
+    .textarea-container textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+    }
+
+    .sound-toggle i {
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+  <label class="sound-toggle" style="position:fixed;top:70px;right:20px;z-index:90;background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+    <input type="checkbox" id="soundToggle" checked>
+    <i class="fas fa-volume-up"></i>
+  </label>
+
+  <div class="workspace">
+    <div class="main-card">
+      <h1 style="margin-bottom: var(--space-2);">🎯 随机点名器</h1>
+      <p style="color: var(--text-light);">公平公正，随机选择</p>
+
+      <!-- 模式切换 -->
+      <div class="settings-row" style="margin-top: var(--space-6);">
+        <div class="mode-switch">
+          <button class="mode-btn active" onclick="switchMode('single')">单人</button>
+          <button class="mode-btn" onclick="switchMode('multi')">多人</button>
+        </div>
+        <div id="multiCount" style="display: none;">
+          <label>人数：</label>
+          <input type="number" class="form-input" style="width: 60px; display: inline-block;" id="pickCount" value="3" min="1" max="20">
+        </div>
+      </div>
+
+      <!-- 名字显示 -->
+      <div class="name-display" id="nameDisplay">准备好了吗？</div>
+
+      <!-- 控制按钮 -->
+      <div class="controls">
+        <button class="btn-start" id="startBtn" onclick="toggleRolling()">
+          开始
+        </button>
+        <button class="btn btn-secondary btn-lg" onclick="resetAll()">
+          <i class="fas fa-redo"></i> 重置
+        </button>
+      </div>
+
+      <!-- 历史记录 -->
+      <div class="history-panel">
+        <div class="history-title">
+          <i class="fas fa-history"></i> 抽中记录
+          <button class="btn btn-ghost btn-sm" onclick="clearHistory()" style="margin-left: auto;">清空</button>
+        </div>
+        <div class="history-tags" id="historyTags">
+          <span style="color: var(--text-muted);">暂无记录</span>
+        </div>
+      </div>
+
+      <!-- 学生列表 -->
+      <div class="student-grid" id="studentGrid"></div>
+
+      <!-- 编辑名单 -->
+      <div class="textarea-container">
+        <details>
+          <summary style="cursor: pointer; color: var(--primary); font-weight: 500;">
+            <i class="fas fa-edit"></i> 编辑名单（每行一个名字）
+          </summary>
+          <textarea id="nameList" onchange="updateStudentList()">张三
+李四
+王五
+赵六
+陈七
+刘八
+周九
+吴十
+林小明
+黄小红
+杨小华
+郑小强</textarea>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let students = [];
+    let history = [];
+    let isRolling = false;
+    let rollInterval = null;
+    let currentMode = 'single';
+
+    // 初始化
+    function init() {
+      updateStudentList();
+    }
+
+    function updateStudentList() {
+      const text = document.getElementById('nameList').value;
+      students = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+      renderStudentGrid();
+    }
+
+    function renderStudentGrid() {
+      const grid = document.getElementById('studentGrid');
+      grid.innerHTML = students.map(name => `
+        <div class="student-chip ${history.includes(name) ? 'picked' : ''}" onclick="pickOne('${name}')">
+          ${name}
+        </div>
+      `).join('');
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('multiCount').style.display = mode === 'multi' ? 'block' : 'none';
+    }
+
+    function toggleRolling() {
+      if (isRolling) {
+        stopRolling();
+      } else {
+        startRolling();
+      }
+    }
+
+    function startRolling() {
+      if (students.length === 0) {
+        alert('请先添加学生名单');
+        return;
+      }
+
+      isRolling = true;
+      const btn = document.getElementById('startBtn');
+      btn.textContent = '停止';
+      btn.classList.add('running');
+
+      const display = document.getElementById('nameDisplay');
+      display.classList.add('rolling');
+
+      rollInterval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * students.length);
+        display.textContent = students[randomIndex];
+      }, 50);
+    }
+
+    function stopRolling() {
+      isRolling = false;
+      clearInterval(rollInterval);
+
+      const btn = document.getElementById('startBtn');
+      btn.textContent = '开始';
+      btn.classList.remove('running');
+
+      const display = document.getElementById('nameDisplay');
+      display.classList.remove('rolling');
+
+      // 最终选择
+      if (currentMode === 'single') {
+        const selected = display.textContent;
+        addToHistory(selected);
+        playSound();
+      } else {
+        const count = Math.min(parseInt(document.getElementById('pickCount').value) || 3, students.length);
+        const shuffled = [...students].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, count);
+        display.textContent = selected.join('、');
+        selected.forEach(name => addToHistory(name));
+        playSound();
+      }
+    }
+
+    function pickOne(name) {
+      const display = document.getElementById('nameDisplay');
+      display.textContent = name;
+      addToHistory(name);
+      playSound();
+    }
+
+    function addToHistory(name) {
+      if (!history.includes(name)) {
+        history.push(name);
+        renderHistory();
+        renderStudentGrid();
+      }
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyTags');
+      if (history.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted);">暂无记录</span>';
+        return;
+      }
+      container.innerHTML = history.map(name =>
+        `<span class="history-tag">${name}</span>`
+      ).join('');
+    }
+
+    function clearHistory() {
+      history = [];
+      renderHistory();
+      renderStudentGrid();
+    }
+
+    function resetAll() {
+      history = [];
+      document.getElementById('nameDisplay').textContent = '准备好了吗？';
+      renderHistory();
+      renderStudentGrid();
+    }
+
+    function playSound() {
+      if (!document.getElementById('soundToggle').checked) return;
+
+      // 简单的提示音
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.3;
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.15);
+    }
+
+    init();
+    PageComponents.initPage({ title: '随机点名器', icon: 'fa-random' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

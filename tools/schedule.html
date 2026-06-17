@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课程表生成器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-5);
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+      padding: var(--space-2);
+      text-align: center;
+      border: 1px solid var(--border);
+      min-width: 100px;
+      height: 50px;
+    }
+
+    .schedule-table th {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .schedule-table th:first-child {
+      background: var(--primary-dark);
+      width: 70px;
+    }
+
+    .schedule-table td:first-child {
+      background: var(--bg-secondary);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .schedule-table td {
+      position: relative;
+    }
+
+    .schedule-table select {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      text-align: center;
+      font-size: 0.9rem;
+      padding: 4px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      font-weight: 500;
+    }
+
+    .schedule-table select:focus {
+      background: var(--primary-bg);
+    }
+
+    .schedule-table td:hover {
+      background: var(--primary-bg);
+    }
+
+    .lunch-row td {
+      background: var(--warning-bg) !important;
+      color: var(--warning-dark);
+      font-weight: 500;
+    }
+
+    .lunch-row td select {
+      color: var(--warning-dark);
+      font-weight: 600;
+    }
+
+    /* 打印样式 */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      .print-area,
+      .print-area * {
+        visibility: visible;
+      }
+
+      .print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .schedule-table {
+        box-shadow: none;
+        border: 2px solid #333;
+      }
+
+      .schedule-table th {
+        background: #333 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .schedule-table td:first-child {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .schedule-table select {
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .print-title {
+        display: block !important;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+      }
+    }
+
+    .print-title {
+      display: none;
+    }
+
+    .subject-colors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: var(--space-3);
+    }
+
+    .subject-color {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+    }
+
+    .color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="header-actions no-print">
+      <div>
+        <h2 style="margin-bottom: 4px;">课程表</h2>
+        <p style="color: var(--text-light); font-size: 0.9rem;">选择课程后直接打印</p>
+      </div>
+      <div style="display: flex; gap: var(--space-2);">
+        <button class="btn btn-secondary" onclick="clearAll()">
+          <i class="fas fa-eraser"></i> 清空
+        </button>
+        <button class="btn btn-secondary" onclick="loadTemplate('primary')">
+          <i class="fas fa-school"></i> 小学模板
+        </button>
+        <button class="btn btn-secondary" onclick="loadTemplate('middle')">
+          <i class="fas fa-university"></i> 中学模板
+        </button>
+        <button class="btn btn-primary" onclick="printSchedule()">
+          <i class="fas fa-print"></i> 打印课程表
+        </button>
+      </div>
+    </div>
+
+    <div class="print-area">
+      <div class="print-title" id="printTitle">我的课程表</div>
+
+      <div style="margin-bottom: 16px;" class="no-print">
+        <label style="font-size: 0.9rem; color: var(--text-light);">标题（打印时显示）：</label>
+        <input type="text" class="form-input" id="scheduleTitle" value="我的课程表" style="width: 300px; display: inline-block;">
+      </div>
+
+      <table class="schedule-table" id="scheduleTable">
+        <thead>
+          <tr>
+            <th></th>
+            <th>星期一</th>
+            <th>星期二</th>
+            <th>星期三</th>
+            <th>星期四</th>
+            <th>星期五</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody">
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card no-print" style="margin-top: var(--space-5);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-info-circle"></i> 使用说明</div>
+      </div>
+      <ul style="margin-left: 20px; color: var(--text-light); line-height: 2;">
+        <li>点击单元格的下拉框选择课程</li>
+        <li>选择"小学模板"或"中学模板"快速填充</li>
+        <li>点击"打印课程表"只打印课程表内容</li>
+        <li>可自定义打印标题</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // 课程选项
+    const SUBJECTS = {
+      '主科': ['语文', '数学', '英语'],
+      '理科': ['物理', '化学', '生物'],
+      '文科': ['历史', '地理', '政治', '道德与法治'],
+      '艺体': ['音乐', '体育', '美术'],
+      '其他': ['科学', '信息技术', '综合实践', '劳动', '班会', '自习', '午休']
+    };
+
+    const ALL_SUBJECTS = Object.values(SUBJECTS).flat();
+
+    // 课程颜色映射
+    const SUBJECT_COLORS = {
+      '语文': '#ef4444',
+      '数学': '#3b82f6',
+      '英语': '#10b981',
+      '物理': '#8b5cf6',
+      '化学': '#f59e0b',
+      '生物': '#14b8a6',
+      '历史': '#ec4899',
+      '地理': '#6366f1',
+      '政治': '#f97316',
+      '道德与法治': '#f97316',
+      '音乐': '#a855f7',
+      '体育': '#22c55e',
+      '美术': '#e11d48',
+      '科学': '#06b6d4',
+      '信息技术': '#64748b',
+      '综合实践': '#84cc16',
+      '劳动': '#d97706',
+      '班会': '#6b7280',
+      '自习': '#9ca3af',
+      '午休': '#fbbf24'
+    };
+
+    // 课程表数据
+    let scheduleData = [];
+
+    // 生成下拉框选项
+    function generateOptions(selected) {
+      let html = '<option value="">--</option>';
+
+      for (const [group, subjects] of Object.entries(SUBJECTS)) {
+        html += `<optgroup label="${group}">`;
+        for (const subject of subjects) {
+          const selectedAttr = subject === selected ? 'selected' : '';
+          const color = SUBJECT_COLORS[subject] || '#666';
+          html += `<option value="${subject}" ${selectedAttr} style="color: ${color}">${subject}</option>`;
+        }
+        html += '</optgroup>';
+      }
+
+      return html;
+    }
+
+    // 渲染表格
+    function renderTable() {
+      const tbody = document.getElementById('scheduleBody');
+      tbody.innerHTML = scheduleData.map((row, rowIndex) => `
+        <tr class="${row.isLunch ? 'lunch-row' : ''}">
+          <td>${row.time}</td>
+          ${row.periods.map((period, colIndex) => `
+            <td>
+              <select onchange="updateCell(${rowIndex}, ${colIndex}, this.value)" style="color: ${SUBJECT_COLORS[period] || '#333'}">
+                ${generateOptions(period)}
+              </select>
+            </td>
+          `).join('')}
+        </tr>
+      `).join('');
+    }
+
+    function updateCell(row, col, value) {
+      scheduleData[row].periods[col] = value;
+      renderTable();
+    }
+
+    // 加载模板
+    function loadTemplate(type) {
+      if (type === 'primary') {
+        scheduleData = [
+          { time: '第1节', periods: ['语文', '数学', '语文', '数学', '语文'] },
+          { time: '第2节', periods: ['数学', '语文', '英语', '语文', '数学'] },
+          { time: '第3节', periods: ['英语', '科学', '音乐', '英语', '科学'] },
+          { time: '第4节', periods: ['体育', '美术', '道德与法治', '体育', '美术'] },
+          { time: '午休', periods: ['午休', '午休', '午休', '午休', '午休'], isLunch: true },
+          { time: '第5节', periods: ['音乐', '综合实践', '科学', '美术', '英语'] },
+          { time: '第6节', periods: ['道德与法治', '信息技术', '体育', '综合实践', '班会'] },
+        ];
+      } else {
+        scheduleData = [
+          { time: '第1节', periods: ['语文', '数学', '英语', '物理', '化学'] },
+          { time: '第2节', periods: ['数学', '英语', '语文', '化学', '物理'] },
+          { time: '第3节', periods: ['英语', '物理', '数学', '语文', '生物'] },
+          { time: '第4节', periods: ['物理', '化学', '历史', '英语', '语文'] },
+          { time: '午休', periods: ['午休', '午休', '午休', '午休', '午休'], isLunch: true },
+          { time: '第5节', periods: ['历史', '语文', '地理', '数学', '英语'] },
+          { time: '第6节', periods: ['地理', '生物', '体育', '历史', '政治'] },
+          { time: '第7节', periods: ['体育', '政治', '美术', '地理', '班会'] },
+        ];
+      }
+
+      renderTable();
+    }
+
+    // 清空
+    function clearAll() {
+      if (!confirm('确定清空课程表？')) return;
+      scheduleData.forEach(row => {
+        row.periods = row.periods.map(() => '');
+      });
+      renderTable();
+    }
+
+    // 打印课程表
+    function printSchedule() {
+      const title = document.getElementById('scheduleTitle').value;
+      document.getElementById('printTitle').textContent = title;
+      window.print();
+    }
+
+    // 初始化
+    loadTemplate('primary');
+
+    PageComponents.initPage({ title: '课程表生成器', icon: 'fa-calendar-alt' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

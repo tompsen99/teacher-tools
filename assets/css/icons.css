@@ -1,0 +1,249 @@
+/**
+ * Font Awesome 6 Subset - Teacher Tools Site
+ * Only includes icons actually used across the site (~90 icons)
+ * Replaces the full ~100KB all.min.css with this ~4KB file
+ * Font files are still loaded from CDN (cached by browsers)
+ */
+
+/* ================= Font Face Declarations ================= */
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Font Awesome 6 Brands';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.ttf') format('truetype');
+}
+
+/* ================= Base Classes ================= */
+.fas,
+.fa-solid {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+}
+
+.fab,
+.fa-brands {
+  font-family: 'Font Awesome 6 Brands';
+  font-weight: 400;
+}
+
+.fas, .fab,
+.fa-solid, .fa-brands {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+}
+
+/* ================= Utilities ================= */
+.fa-fw {
+  text-align: center;
+  width: 1.25em;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+/* ================= Icon Definitions ================= */
+/* --- Navigation & UI --- */
+.fa-toolbox::before { content: "\f552"; }
+.fa-house::before,
+.fa-home::before { content: "\f015"; }
+.fa-lock::before { content: "\f023"; }
+.fa-key::before { content: "\f084"; }
+.fa-magnifying-glass::before,
+.fa-search::before { content: "\f002"; }
+.fa-spinner::before { content: "\f110"; }
+.fa-arrow-right::before { content: "\f061"; }
+.fa-arrow-left::before { content: "\f060"; }
+.fa-arrow-up::before { content: "\f062"; }
+.fa-arrow-down::before { content: "\f063"; }
+.fa-chevron-left::before { content: "\f053"; }
+.fa-chevron-right::before { content: "\f054"; }
+.fa-chevron-down::before { content: "\f078"; }
+
+/* --- Actions --- */
+.fa-check::before { content: "\f00c"; }
+.fa-xmark::before,
+.fa-times::before { content: "\f00d"; }
+.fa-plus::before { content: "\f067"; }
+.fa-minus::before { content: "\f068"; }
+.fa-magnifying-glass-plus::before,
+.fa-search-plus::before { content: "\f00e"; }
+.fa-download::before { content: "\f019"; }
+.fa-clone::before,
+.fa-copy::before { content: "\f0c5"; }
+.fa-pen-to-square::before,
+.fa-edit::before { content: "\f303"; }
+.fa-trash-can::before,
+.fa-trash::before { content: "\f2ed"; }
+.fa-floppy-disk::before,
+.fa-save::before { content: "\f0c7"; }
+.fa-print::before { content: "\f02f"; }
+.fa-eraser::before { content: "\f12d"; }
+.fa-scissors::before,
+.fa-cut::before { content: "\f0c4"; }
+
+/* --- Status & Feedback --- */
+.fa-star::before { content: "\f005"; }
+.fa-heart::before { content: "\f004"; }
+.fa-circle-info::before,
+.fa-info-circle::before { content: "\f05a"; }
+.fa-circle-exclamation::before,
+.fa-exclamation-circle::before { content: "\f06a"; }
+.fa-triangle-exclamation::before,
+.fa-exclamation-triangle::before { content: "\f071"; }
+.fa-circle-plus::before,
+.fa-plus-circle::before { content: "\f055"; }
+.fa-inbox::before { content: "\f01c"; }
+
+/* --- Features --- */
+.fa-bolt::before { content: "\f0e7"; }
+.fa-shield-halved::before,
+.fa-shield-alt::before { content: "\f3ed"; }
+.fa-mobile-screen-button::before,
+.fa-mobile-alt::before { content: "\f3cd"; }
+.fa-gift::before { content: "\f06b"; }
+.fa-crown::before { content: "\f521"; }
+.fa-unlock::before { content: "\f09c"; }
+.fa-user::before { content: "\f007"; }
+.fa-users::before { content: "\f0c0"; }
+
+/* --- Tool Icons --- */
+.fa-comment-dots::before { content: "\f4ad"; }
+.fa-chart-column::before,
+.fa-chart-bar::before { content: "\f080"; }
+.fa-chart-pie::before { content: "\f200"; }
+.fa-chart-line::before { content: "\f201"; }
+.fa-arrows-rotate::before,
+.fa-sync-alt::before { content: "\f2f1"; }
+.fa-right-left::before,
+.fa-exchange-alt::before { content: "\f362"; }
+.fa-language::before { content: "\f1ab"; }
+.fa-clipboard-list::before { content: "\f46d"; }
+.fa-font::before { content: "\f031"; }
+.fa-calendar-days::before,
+.fa-calendar-alt::before { content: "\f073"; }
+.fa-palette::before { content: "\f53f"; }
+.fa-cloud::before { content: "\f0c2"; }
+.fa-cloud-arrow-up::before,
+.fa-cloud-upload-alt::before { content: "\f0ee"; }
+.fa-award::before { content: "\f559"; }
+.fa-chair::before { content: "\f6c0"; }
+.fa-shuffle::before,
+.fa-random::before { content: "\f074"; }
+.fa-stopwatch::before { content: "\f2f2"; }
+.fa-down-left-and-up-right-to-center::before,
+.fa-compress-alt::before { content: "\f422"; }
+.fa-images::before { content: "\f302"; }
+.fa-image::before { content: "\f03e"; }
+.fa-file-pdf::before { content: "\f1c1"; }
+.fa-file-excel::before { content: "\f1c3"; }
+.fa-file-import::before { content: "\f56f"; }
+.fa-qrcode::before { content: "\f029"; }
+.fa-compass-drafting::before,
+.fa-drafting-compass::before { content: "\f568"; }
+.fa-shapes::before { content: "\f5fc"; }
+.fa-calculator::before { content: "\f1ec"; }
+.fa-diagram-project::before,
+.fa-project-diagram::before { content: "\f542"; }
+.fa-egg::before { content: "\f7fb"; }
+
+/* --- UI Elements --- */
+.fa-gear::before,
+.fa-cog::before { content: "\f013"; }
+.fa-gears::before,
+.fa-cogs::before { content: "\f085"; }
+.fa-expand::before { content: "\f065"; }
+.fa-compress::before { content: "\f066"; }
+.fa-up-right-and-down-left-from-center::before,
+.fa-expand-arrows-alt::before { content: "\f424"; }
+.fa-arrows-up-down-left-right::before,
+.fa-arrows-alt::before { content: "\f0b2"; }
+.fa-layer-group::before { content: "\f5fd"; }
+.fa-table::before { content: "\f0ce"; }
+.fa-th::before { content: "\f00a"; }
+.fa-th-large::before { content: "\f009"; }
+.fa-list::before { content: "\f03a"; }
+.fa-object-group::before { content: "\f247"; }
+.fa-grip-lines::before { content: "\f7a4"; }
+.fa-grip-lines-vertical::before { content: "\f7a5"; }
+.fa-keyboard::before { content: "\f11c"; }
+
+/* --- Media --- */
+.fa-play::before { content: "\f04b"; }
+.fa-pause::before { content: "\f04c"; }
+.fa-volume-high::before,
+.fa-volume-up::before { content: "\f028"; }
+.fa-eye::before { content: "\f06e"; }
+.fa-eye-dropper::before { content: "\f1fb"; }
+
+/* --- Shapes & Math --- */
+.fa-ruler-combined::before,
+.fa-ruler::before { content: "\f545"; }
+.fa-weight-scale::before,
+.fa-weight::before { content: "\f496"; }
+.fa-vector-square::before { content: "\f5ce"; }
+.fa-cube::before { content: "\f1b2"; }
+.fa-temperature-half::before,
+.fa-thermometer-half::before { content: "\f2c9"; }
+
+/* --- Time & Data --- */
+.fa-clock::before { content: "\f017"; }
+.fa-gauge-high::before,
+.fa-tachometer-alt::before { content: "\f3fd"; }
+.fa-database::before { content: "\f1c0"; }
+.fa-arrow-rotate-left::before,
+.fa-undo::before { content: "\f0e2"; }
+.fa-arrow-rotate-right::before,
+.fa-redo::before { content: "\f01e"; }
+.fa-clock-rotate-left::before,
+.fa-history::before { content: "\f1da"; }
+
+/* --- Education --- */
+.fa-graduation-cap::before { content: "\f19d"; }
+.fa-chalkboard-user::before,
+.fa-chalkboard-teacher::before { content: "\f51c"; }
+.fa-school::before { content: "\f549"; }
+.fa-book::before { content: "\f02d"; }
+.fa-stamp::before { content: "\f582"; }
+.fa-mouse-pointer::before,
+.fa-arrow-pointer::before { content: "\f245"; }
+.fa-folder-open::before { content: "\f07c"; }
+.fa-lightbulb::before { content: "\f0eb"; }
+.fa-wand-magic::before,
+.fa-magic::before { content: "\f0d0"; }
+.fa-circle-half-stroke::before,
+.fa-adjust::before { content: "\f042"; }
+.fa-swatchbook::before { content: "\f5c4"; }
+.fa-person-running::before,
+.fa-running::before { content: "\f70c"; }
+.fa-headset::before { content: "\f59c"; }
+
+/* --- Navigation (secondary) --- */
+.fa-right-from-bracket::before,
+.fa-sign-out-alt::before { content: "\f2f5"; }
+.fa-code::before { content: "\f121"; }
+.fa-screwdriver-wrench::before,
+.fa-tools::before { content: "\f7d9"; }
+
+/* ================= Brands ================= */
+.fab.fa-weixin::before { content: "\f230"; }

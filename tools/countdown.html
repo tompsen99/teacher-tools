@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课堂计时器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+    }
+
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+      min-height: calc(100vh - 57px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      width: 100%;
+      max-width: 700px;
+      text-align: center;
+    }
+
+    .timer-display {
+      font-size: 8rem;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      margin: var(--space-6) 0;
+      text-shadow: 0 0 30px rgba(79, 172, 254, 0.5);
+      letter-spacing: 4px;
+    }
+
+    .timer-display.warning {
+      color: #fbbf24;
+      text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+      animation: pulse 1s infinite;
+    }
+
+    .timer-display.danger {
+      color: #ef4444;
+      text-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+      animation: pulse 0.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .progress-ring {
+      margin: var(--space-4) auto;
+      position: relative;
+      width: 300px;
+      height: 300px;
+    }
+
+    .progress-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring .bg {
+      stroke: rgba(255, 255, 255, 0.1);
+    }
+
+    .progress-ring .progress {
+      stroke: #4facfe;
+      transition: stroke-dashoffset 0.3s, stroke 0.3s;
+    }
+
+    .progress-ring .progress.warning { stroke: #fbbf24; }
+    .progress-ring .progress.danger { stroke: #ef4444; }
+
+    .timer-label {
+      font-size: 1.5rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: var(--space-4);
+    }
+
+    .controls {
+      display: flex;
+      gap: var(--space-4);
+      justify-content: center;
+      margin: var(--space-6) 0;
+    }
+
+    .btn-timer {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-start:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-pause {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-reset {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-reset:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .preset-times {
+      display: flex;
+      gap: var(--space-3);
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+    }
+
+    .preset-btn {
+      padding: var(--space-2) var(--space-4);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-full);
+      color: white;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 0.9rem;
+    }
+
+    .preset-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .preset-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .custom-time {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .custom-time input {
+      width: 60px;
+      padding: var(--space-2);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius);
+      color: white;
+      text-align: center;
+      font-size: 1.2rem;
+    }
+
+    .custom-time input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .custom-time span {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 1.2rem;
+    }
+
+    .fullscreen-btn {
+      position: absolute;
+      top: var(--space-4);
+      right: var(--space-4);
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="timer-card">
+      <div class="timer-label" id="timerLabel">倒计时</div>
+
+      <!-- 预设时间 -->
+      <div class="preset-times">
+        <button class="preset-btn" onclick="setPreset(60)">1分钟</button>
+        <button class="preset-btn" onclick="setPreset(180)">3分钟</button>
+        <button class="preset-btn active" onclick="setPreset(300)">5分钟</button>
+        <button class="preset-btn" onclick="setPreset(600)">10分钟</button>
+        <button class="preset-btn" onclick="setPreset(900)">15分钟</button>
+        <button class="preset-btn" onclick="setPreset(1800)">30分钟</button>
+        <button class="preset-btn" onclick="setPreset(2700)">45分钟</button>
+      </div>
+
+      <!-- 自定义时间 -->
+      <div class="custom-time">
+        <input type="number" id="customMin" value="5" min="0" max="99" onchange="setCustomTime()">
+        <span>:</span>
+        <input type="number" id="customSec" value="0" min="0" max="59" onchange="setCustomTime()">
+        <button class="btn btn-ghost btn-sm" style="color: rgba(255,255,255,0.7);" onclick="setCustomTime()">
+          <i class="fas fa-check"></i>
+        </button>
+      </div>
+
+      <!-- 进度环 -->
+      <div class="progress-ring">
+        <svg width="300" height="300">
+          <circle class="bg" cx="150" cy="150" r="140" fill="none" stroke-width="8"/>
+          <circle class="progress" id="progressCircle" cx="150" cy="150" r="140" fill="none" stroke-width="8"
+                  stroke-dasharray="879.6" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+          <div class="timer-display" id="timerDisplay">05:00</div>
+        </div>
+      </div>
+
+      <!-- 控制按钮 -->
+      <div class="controls">
+        <button class="btn-timer btn-reset" onclick="resetTimer()">
+          <i class="fas fa-undo"></i>
+        </button>
+        <button class="btn-timer btn-start" id="startBtn" onclick="toggleTimer()">
+          <i class="fas fa-play"></i>
+        </button>
+        <button class="btn-timer btn-reset" onclick="addTime(60)">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let totalSeconds = 300;
+    let remainingSeconds = 300;
+    let isRunning = false;
+    let timerInterval = null;
+    let circumference = 2 * Math.PI * 140;
+
+    function setPreset(seconds) {
+      totalSeconds = seconds;
+      remainingSeconds = seconds;
+
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('customMin').value = Math.floor(seconds / 60);
+      document.getElementById('customSec').value = seconds % 60;
+
+      updateDisplay();
+    }
+
+    function setCustomTime() {
+      const min = parseInt(document.getElementById('customMin').value) || 0;
+      const sec = parseInt(document.getElementById('customSec').value) || 0;
+      totalSeconds = min * 60 + sec;
+      remainingSeconds = totalSeconds;
+
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      updateDisplay();
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      if (remainingSeconds <= 0) return;
+
+      isRunning = true;
+      const btn = document.getElementById('startBtn');
+      btn.innerHTML = '<i class="fas fa-pause"></i>';
+      btn.classList.remove('btn-start');
+      btn.classList.add('btn-pause');
+
+      timerInterval = setInterval(() => {
+        remainingSeconds--;
+        updateDisplay();
+
+        if (remainingSeconds <= 0) {
+          clearInterval(timerInterval);
+          isRunning = false;
+          btn.innerHTML = '<i class="fas fa-play"></i>';
+          btn.classList.remove('btn-pause');
+          btn.classList.add('btn-start');
+          playAlarm();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      isRunning = false;
+      clearInterval(timerInterval);
+
+      const btn = document.getElementById('startBtn');
+      btn.innerHTML = '<i class="fas fa-play"></i>';
+      btn.classList.remove('btn-pause');
+      btn.classList.add('btn-start');
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      remainingSeconds = totalSeconds;
+      updateDisplay();
+    }
+
+    function addTime(seconds) {
+      totalSeconds += seconds;
+      remainingSeconds += seconds;
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      const min = Math.floor(remainingSeconds / 60);
+      const sec = remainingSeconds % 60;
+      const display = document.getElementById('timerDisplay');
+      display.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+
+      // 更新进度环
+      const circle = document.getElementById('progressCircle');
+      const progress = remainingSeconds / totalSeconds;
+      const offset = circumference * (1 - progress);
+      circle.style.strokeDashoffset = offset;
+
+      // 颜色状态
+      display.className = 'timer-display';
+      circle.className = 'progress';
+
+      if (remainingSeconds <= 10 && remainingSeconds > 0) {
+        display.classList.add('danger');
+        circle.classList.add('danger');
+      } else if (remainingSeconds <= 30) {
+        display.classList.add('warning');
+        circle.classList.add('warning');
+      }
+    }
+
+    function playAlarm() {
+      if (!document.getElementById('soundToggle').checked) return;
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // 播放3声提示音
+      for (let i = 0; i < 3; i++) {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+
+        const startTime = audioCtx.currentTime + i * 0.3;
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.2);
+      }
+    }
+
+    // 初始化
+    updateDisplay();
+
+    PageComponents.initPage({ title: '课堂计时器', icon: 'fa-stopwatch' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>成绩统计分析 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    .stat-value.high { color: var(--success); }
+    .stat-value.medium { color: var(--warning); }
+    .stat-value.low { color: var(--danger); }
+
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--space-4);
+    }
+
+    .score-table th, .score-table td {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .score-table th {
+      background: var(--bg-secondary);
+      font-weight: 600;
+    }
+
+    .score-table tr:hover td {
+      background: var(--bg);
+    }
+
+    .score-input {
+      width: 60px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .score-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .grade-bar {
+      height: 20px;
+      border-radius: 10px;
+      display: flex;
+      overflow: hidden;
+      margin: var(--space-2) 0;
+    }
+
+    .grade-segment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: white;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      margin-top: var(--space-4);
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 200px;
+      padding: var(--space-4) 0;
+    }
+
+    .bar {
+      flex: 1;
+      background: var(--primary);
+      border-radius: 4px 4px 0 0;
+      min-width: 20px;
+      position: relative;
+      transition: height 0.3s;
+    }
+
+    .bar:hover {
+      opacity: 0.8;
+    }
+
+    .bar-label {
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+
+    .bar-value {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <h1>📊 成绩统计分析</h1>
+        <p style="color: var(--text-light);">输入或导入成绩，自动分析统计</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary" onclick="importExcel()">
+          <i class="fas fa-file-excel"></i> 导入 Excel
+        </button>
+        <button class="btn btn-secondary" onclick="exportReport()">
+          <i class="fas fa-download"></i> 导出报告
+        </button>
+        <button class="btn btn-danger" onclick="clearAll()">
+          <i class="fas fa-trash"></i> 清空
+        </button>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">总人数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value high" id="avgScore">-</div>
+        <div class="stat-label">平均分</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value high" id="maxScore">-</div>
+        <div class="stat-label">最高分</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value low" id="minScore">-</div>
+        <div class="stat-label">最低分</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value high" id="excellentRate">-</div>
+        <div class="stat-label">优秀率 (≥90)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value medium" id="passRate">-</div>
+        <div class="stat-label">及格率 (≥60)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value low" id="failRate">-</div>
+        <div class="stat-label">不及格率</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="medianScore">-</div>
+        <div class="stat-label">中位数</div>
+      </div>
+    </div>
+
+    <!-- 等级分布 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-chart-pie"></i> 等级分布</div>
+      </div>
+      <div class="grade-bar" id="gradeBar"></div>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.85rem;">
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></span> 优秀 (90-100)</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: #3b82f6; border-radius: 2px;"></span> 良好 (80-89)</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> 中等 (70-79)</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: #f97316; border-radius: 2px;"></span> 及格 (60-69)</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></span> 不及格 (<60)</span>
+      </div>
+    </div>
+
+    <!-- 分数段柱状图 -->
+    <div class="chart-container">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-chart-bar"></i> 分数段分布</div>
+      </div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+
+    <!-- 成绩表格 -->
+    <div class="card" style="margin-top: var(--space-4);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-table"></i> 成绩表</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="addStudent()">
+            <i class="fas fa-plus"></i> 添加学生
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="randomScores()">
+            <i class="fas fa-random"></i> 随机生成
+          </button>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="score-table" id="scoreTable">
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>姓名</th>
+              <th>成绩</th>
+              <th>等级</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="scoreBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script>
+    initPage({ title: '成绩统计分析', icon: 'fa-chart-bar' });
+
+    let students = [];
+
+    // 添加学生
+    function addStudent() {
+      students.push({ name: `学生${students.length + 1}`, score: null });
+      renderTable();
+    }
+
+    // 删除学生
+    function removeStudent(index) {
+      students.splice(index, 1);
+      renderTable();
+      analyze();
+    }
+
+    // 更新成绩
+    function updateScore(index, value) {
+      const score = parseFloat(value);
+      if (!isNaN(score) && score >= 0 && score <= 100) {
+        students[index].score = score;
+      } else if (value === '') {
+        students[index].score = null;
+      }
+      analyze();
+    }
+
+    // 更新姓名
+    function updateName(index, value) {
+      students[index].name = value;
+    }
+
+    // 随机生成
+    function randomScores() {
+      const names = ['张三', '李四', '王五', '赵六', '陈七', '刘八', '周九', '吴十',
+                     '林小明', '黄小红', '杨小华', '郑小强', '孙小美', '朱小龙', '何小丽'];
+      students = names.map(name => ({
+        name,
+        score: Math.floor(Math.random() * 41) + 60
+      }));
+      renderTable();
+      analyze();
+    }
+
+    // 渲染表格
+    function renderTable() {
+      const tbody = document.getElementById('scoreBody');
+      tbody.innerHTML = students.map((s, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>
+            <input type="text" class="score-input" style="width: 80px;" value="${s.name}" onchange="updateName(${i}, this.value)">
+          </td>
+          <td>
+            <input type="number" class="score-input" min="0" max="100" value="${s.score !== null ? s.score : ''}" onchange="updateScore(${i}, this.value)">
+          </td>
+          <td>${getGrade(s.score)}</td>
+          <td>
+            <button class="btn btn-ghost btn-sm" onclick="removeStudent(${i})" style="color: var(--danger);">
+              <i class="fas fa-times"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 获取等级
+    function getGrade(score) {
+      if (score === null) return '-';
+      if (score >= 90) return '<span style="color: #10b981; font-weight: 600;">优秀</span>';
+      if (score >= 80) return '<span style="color: #3b82f6; font-weight: 600;">良好</span>';
+      if (score >= 70) return '<span style="color: #f59e0b; font-weight: 600;">中等</span>';
+      if (score >= 60) return '<span style="color: #f97316; font-weight: 600;">及格</span>';
+      return '<span style="color: #ef4444; font-weight: 600;">不及格</span>';
+    }
+
+    // 分析成绩
+    function analyze() {
+      const validScores = students.filter(s => s.score !== null).map(s => s.score);
+      const count = validScores.length;
+
+      if (count === 0) {
+        resetStats();
+        return;
+      }
+
+      const sum = validScores.reduce((a, b) => a + b, 0);
+      const avg = sum / count;
+      const max = Math.max(...validScores);
+      const min = Math.min(...validScores);
+      const sorted = [...validScores].sort((a, b) => a - b);
+      const median = count % 2 === 0 ? (sorted[count/2 - 1] + sorted[count/2]) / 2 : sorted[Math.floor(count/2)];
+      const excellent = validScores.filter(s => s >= 90).length;
+      const pass = validScores.filter(s => s >= 60).length;
+
+      document.getElementById('totalCount').textContent = count;
+      document.getElementById('avgScore').textContent = avg.toFixed(1);
+      document.getElementById('maxScore').textContent = max;
+      document.getElementById('minScore').textContent = min;
+      document.getElementById('excellentRate').textContent = (excellent / count * 100).toFixed(1) + '%';
+      document.getElementById('passRate').textContent = (pass / count * 100).toFixed(1) + '%';
+      document.getElementById('failRate').textContent = ((count - pass) / count * 100).toFixed(1) + '%';
+      document.getElementById('medianScore').textContent = median.toFixed(1);
+
+      renderGradeBar(validScores);
+      renderBarChart(validScores);
+    }
+
+    function resetStats() {
+      document.getElementById('totalCount').textContent = '0';
+      document.getElementById('avgScore').textContent = '-';
+      document.getElementById('maxScore').textContent = '-';
+      document.getElementById('minScore').textContent = '-';
+      document.getElementById('excellentRate').textContent = '-';
+      document.getElementById('passRate').textContent = '-';
+      document.getElementById('failRate').textContent = '-';
+      document.getElementById('medianScore').textContent = '-';
+      document.getElementById('gradeBar').innerHTML = '';
+      document.getElementById('barChart').innerHTML = '';
+    }
+
+    // 渲染等级分布条
+    function renderGradeBar(scores) {
+      const count = scores.length;
+      const excellent = scores.filter(s => s >= 90).length;
+      const good = scores.filter(s => s >= 80 && s < 90).length;
+      const medium = scores.filter(s => s >= 70 && s < 80).length;
+      const pass = scores.filter(s => s >= 60 && s < 70).length;
+      const fail = scores.filter(s => s < 60).length;
+
+      const bar = document.getElementById('gradeBar');
+      bar.innerHTML = `
+        <div class="grade-segment" style="width: ${excellent/count*100}%; background: #10b981;">${excellent > 0 ? excellent : ''}</div>
+        <div class="grade-segment" style="width: ${good/count*100}%; background: #3b82f6;">${good > 0 ? good : ''}</div>
+        <div class="grade-segment" style="width: ${medium/count*100}%; background: #f59e0b;">${medium > 0 ? medium : ''}</div>
+        <div class="grade-segment" style="width: ${pass/count*100}%; background: #f97316;">${pass > 0 ? pass : ''}</div>
+        <div class="grade-segment" style="width: ${fail/count*100}%; background: #ef4444;">${fail > 0 ? fail : ''}</div>
+      `;
+    }
+
+    // 渲染柱状图
+    function renderBarChart(scores) {
+      const ranges = ['0-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-89', '90-100'];
+      const counts = ranges.map((_, i) => scores.filter(s => s >= i*10 && s < (i+1)*10).length);
+
+      // 修正90-100的范围
+      counts[9] = scores.filter(s => s >= 90 && s <= 100).length;
+
+      const maxCount = Math.max(...counts, 1);
+      const chart = document.getElementById('barChart');
+
+      chart.innerHTML = counts.map((count, i) => `
+        <div class="bar" style="height: ${count/maxCount*100}%; background: ${i < 6 ? '#ef4444' : i < 7 ? '#f97316' : i < 8 ? '#f59e0b' : i < 9 ? '#3b82f6' : '#10b981'}">
+          <span class="bar-value">${count > 0 ? count : ''}</span>
+          <span class="bar-label">${ranges[i]}</span>
+        </div>
+      `).join('');
+    }
+
+    // 导入Excel
+    function importExcel() {
+      const input = document.getElementById('fileInput');
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          // 解析数据（假设第一列姓名，第二列成绩）
+          students = [];
+          const startRow = json[0] && (json[0][0] === '姓名' || json[0][0] === '名字') ? 1 : 0;
+
+          for (let i = startRow; i < json.length; i++) {
+            if (json[i] && json[i][0]) {
+              students.push({
+                name: String(json[i][0]),
+                score: parseFloat(json[i][1]) || null
+              });
+            }
+          }
+
+          renderTable();
+          analyze();
+          alert(`成功导入 ${students.length} 条记录`);
+        };
+        reader.readAsArrayBuffer(file);
+      };
+      input.click();
+    }
+
+    // 导出报告
+    function exportReport() {
+      const validScores = students.filter(s => s.score !== null);
+      if (validScores.length === 0) {
+        alert('没有成绩数据');
+        return;
+      }
+
+      const scores = validScores.map(s => s.score);
+      const avg = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+
+      let report = '成绩统计报告\n';
+      report += '==================\n\n';
+      report += `总人数: ${validScores.length}\n`;
+      report += `平均分: ${avg}\n`;
+      report += `最高分: ${Math.max(...scores)}\n`;
+      report += `最低分: ${Math.min(...scores)}\n\n`;
+      report += '详细成绩:\n';
+      report += '------------------\n';
+
+      validScores.forEach((s, i) => {
+        report += `${i + 1}. ${s.name}: ${s.score}\n`;
+      });
+
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `成绩报告_${new Date().toLocaleDateString()}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 清空
+    function clearAll() {
+      if (!confirm('确定清空所有数据？')) return;
+      students = [];
+      renderTable();
+      resetStats();
+    }
+
+    // 初始化
+    renderTable();
+  </script>
+</body>
+</html>

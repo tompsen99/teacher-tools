@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>三角形构筑挑战</title>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    :root {
+      --primary: #1976d2;
+      --bg: #f4f6f9;
+      --shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; background: var(--bg); overflow: hidden; }
+    
+    #toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px; background: #ffffff; box-shadow: var(--shadow);
+      height: 60px; z-index: 100; position: relative;
+    }
+    .nav-btn {
+      padding: 6px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;
+      cursor: pointer; background: #fff; color: #555; transition: .2s; font-weight: 500;
+    }
+    .nav-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .view { position: absolute; top: 60px; left: 0; right: 0; bottom: 0; display: none; }
+    .view.active { display: flex; }
+    
+    #build-view { flex-direction: row; background: #f0f2f5; padding: 20px; gap: 20px; }
+    .build-canvas-wrap {
+      flex: 2; background: #fff; border-radius: 16px; box-shadow: var(--shadow);
+      position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
+      border: 2px solid #e8e8e8;
+    }
+    
+    /* 🆕 新增：缩放容器样式 */
+    .canvas-zoom-wrap {
+      width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center;
+      transform-origin: center center;
+      transition: transform 0.2s ease;
+    }
+    
+    #build-canvas { touch-action: none; display: block; }
+    
+    /* 🆕 新增：缩放控制按钮样式 */
+    .zoom-controls {
+      position: absolute; top: 12px; right: 12px;
+      display: flex; gap: 5px; z-index: 20;
+      background: rgba(255,255,255,0.95);
+      padding: 4px; border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+    .zoom-controls button {
+      padding: 4px 10px; border: none; border-radius: 6px;
+      background: #f5f5f5; cursor: pointer; font-size: 14px;
+      transition: .15s;
+    }
+    .zoom-controls button:hover { background: var(--primary); color: #fff; }
+    .zoom-controls span {
+      padding: 4px 8px; background: #fff; border-radius: 4px;
+      font-size: 12px; min-width: 40px; text-align: center;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .unit-legend {
+      position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.92);
+      padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #555;
+      border: 1px solid #ddd; pointer-events: none; line-height: 1.4;
+    }
+    .unit-legend b { color: #d32f2f; }
+    .build-msg {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #fff; padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      font-size: 16px; font-weight: bold; display: none; z-index: 10; white-space: nowrap; text-align: center;
+    }
+    .build-msg.success { border-left: 5px solid #4caf50; color: #2e7d32; }
+    .build-msg.fail { border-left: 5px solid #f44336; color: #c62828; }
+    .build-msg.neutral { color: #666; border-left: 5px solid #9e9e9e; }
+
+    .build-panel {
+      flex: 1; min-width: 280px; background: #fff; border-radius: 16px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; padding: 18px; max-height: calc(100vh - 100px);
+    }
+    .panel-title { font-size: 16px; font-weight: bold; margin-bottom: 14px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+    .slots-area { display: flex; gap: 10px; margin-bottom: 18px; justify-content: center; }
+    .slot {
+      width: 70px; height: 85px; border: 2px dashed #bbb; border-radius: 10px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      background: #fafafa; transition: .2s; position: relative;
+    }
+    .slot.filled { border-style: solid; border-color: #4caf50; background: #e8f5e9; }
+    .slot-label { font-size: 12px; color: #777; margin-bottom: 4px; }
+    .slot-val { font-size: 15px; font-weight: bold; color: #333; }
+    .slot-hint { font-size: 10px; color: #aaa; margin-top: 2px; }
+    
+    .pool-area {
+      flex: 1; background: #f8f9fa; border-radius: 12px; padding: 10px;
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; overflow-y: auto;
+      margin-bottom: 14px; align-content: start;
+    }
+    .seg {
+      height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; color: #fff; cursor: grab; box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+      position: relative; font-size: 13px; transition: .15s;
+    }
+    .seg:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.18); }
+    .seg:active { cursor: grabbing; transform: scale(0.98); }
+    .seg .seg-len { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); color: #555; font-size: 11px; background: #fff; padding: 1px 5px; border-radius: 4px; border: 1px solid #ddd; white-space: nowrap; }
+    .seg .dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; display: inline-block; margin: 0 5px; border: 1px solid rgba(0,0,0,0.3); }
+    
+    .pool-controls { display: flex; gap: 10px; margin-top: auto; }
+    .btn-reset { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #ef5350; color: #fff; font-size: 14px; cursor: pointer; }
+    .btn-reset:hover { background: #e53935; }
+    
+    .ghost-seg {
+      position: fixed; pointer-events: none; z-index: 1000; opacity: 0.95; 
+      transform: translate(-50%, -50%) rotate(-4deg) scale(1.05);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.25); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      #build-view { flex-direction: column; }
+      .build-panel { min-width: 100%; order: 2; max-height: 40vh; }
+      .build-canvas-wrap { order: 1; flex: 1; min-height: 300px; }
+      .pool-area { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="app-navbar"></div>
+<div id="app-modal"></div>
+
+<div id="toolbar">
+  <div style="font-weight:bold; color:#333; font-size:17px;">📐 三角形构筑挑战</div>
+<div style="display:flex; gap:8px;">
+  <button class="nav-btn active" onclick="window.location.href='边的关系.html'" style="background:#1976d2; color:#fff; border-color:#1976d2;">返回</button>
+</div>
+</div>
+
+<div id="build-view" class="view active">
+  <div class="build-canvas-wrap">
+    <!-- 🆕 新增：缩放控制按钮 -->
+    <div class="zoom-controls">
+      <button onclick="changeZoom(-0.1)">➖</button>
+      <span id="zoom-level">100%</span>
+      <button onclick="changeZoom(0.1)">➕</button>
+    </div>
+    
+    <!-- 🆕 新增：缩放容器 -->
+    <div class="canvas-zoom-wrap" id="canvas-zoom-wrap">
+      <canvas id="build-canvas"></canvas>
+    </div>
+    
+    <div class="unit-legend">
+      📏 <b>1格 = 1cm</b><br>
+      🔵 最长边自动置底<br>
+      ⚪ 圆点 = 单位分段刻度
+    </div>
+    <div id="build-msg" class="build-msg"></div>
+  </div>
+  <div class="build-panel">
+    <div class="panel-title">
+      <span>📦 线段库</span>
+      <span style="font-size:12px; color:#777;">拖拽到下方卡槽</span>
+    </div>
+    <div class="slots-area">
+      <div class="slot" data-s="0"><span class="slot-label">边 a</span><span class="slot-val">-</span><span class="slot-hint">拖入</span></div>
+      <div class="slot" data-s="1"><span class="slot-label">边 b</span><span class="slot-val">-</span><span class="slot-hint">拖入</span></div>
+      <div class="slot" data-s="2"><span class="slot-label">边 c</span><span class="slot-val">-</span><span class="slot-hint">拖入</span></div>
+    </div>
+    <div class="pool-area" id="seg-pool"></div>
+    <div class="pool-controls">
+      <button class="btn-reset" id="btn-reset-build">🗑️ 清空重置</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= 核心配置 =================
+const UNIT = 50; // 严格对应：1cm = 50px = 1网格
+const COLORS = ['#d32f2f','#1976d2','#388e3c','#fbc02d','#7b1fa2','#0097a7','#e64a19','#5d4037'];
+let buildSlots = [null, null, null];
+let dragging = null;
+let ghostEl = null;
+
+// 🆕 新增：缩放功能变量
+let currentZoom = 1;
+
+// ================= 初始化线段池 =================
+function initBuildPool() {
+  const pool = document.getElementById('seg-pool');
+  pool.innerHTML = '';
+  const segments = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  segments.forEach((len, idx) => {
+    const col = COLORS[idx % COLORS.length];
+    const el = document.createElement('div');
+    el.className = 'seg';
+    el.style.backgroundColor = col;
+    el.style.width = Math.min(160, len * 13 + 20) + 'px';
+    el.innerHTML = `<span class="seg-len">${len}cm</span>`;
+    for(let i = 1; i < len; i++) el.innerHTML += `<span class="dot"></span>`;
+    el.dataset.len = len;
+    el.dataset.color = col;
+    pool.appendChild(el);
+  });
+}
+
+// ================= 画布与绘制逻辑 =================
+const bCanvas = document.getElementById('build-canvas');
+const bCtx = bCanvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+
+function resizeBuild() {
+  const wrap = document.querySelector('.build-canvas-wrap');
+  bCanvas.width = wrap.clientWidth * dpr;
+  bCanvas.height = wrap.clientHeight * dpr;
+  bCtx.scale(dpr, dpr);
+  bCanvas.style.width = wrap.clientWidth + 'px';
+  bCanvas.style.height = wrap.clientHeight + 'px';
+  drawBuild();
+}
+
+// 🆕 新增：缩放控制函数
+function changeZoom(delta) {
+  currentZoom = Math.max(0.5, Math.min(2.0, currentZoom + delta));
+  document.getElementById('canvas-zoom-wrap').style.transform = `scale(${currentZoom})`;
+  document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+}
+
+function drawBuild() {
+  const w = bCanvas.width / dpr, h = bCanvas.height / dpr;
+  bCtx.clearRect(0, 0, w, h);
+
+  // 绘制1cm网格
+  bCtx.strokeStyle = '#f0f2f5'; bCtx.lineWidth = 1;
+  for(let x = 0; x <= w; x += UNIT) { bCtx.beginPath(); bCtx.moveTo(x, 0); bCtx.lineTo(x, h); bCtx.stroke(); }
+  for(let y = 0; y <= h; y += UNIT) { bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(w, y); bCtx.stroke(); }
+
+  if(buildSlots.some(s => s === null)) {
+    showMsg('👆 请将三条线段拖入下方卡槽', 'neutral');
+    return;
+  }
+
+  // 🌟 智能排序：最长边置底，并绑定边名 a/b/c
+  const sides = buildSlots.map((len, idx) => ({
+    len, 
+    slotIdx: idx, 
+    color: COLORS[idx % COLORS.length], 
+    label: ['边a', '边b', '边c'][idx]  // 🆕 使用边a/边b/边c作为标签
+  })).sort((a, b) => b.len - a.len);
+
+  const [sLong, sMid, sShort] = sides;
+  const valid = (sMid.len + sShort.len > sLong.len);
+  const cx = w / 2, cy = h / 2 + 40;
+  const aPx = sLong.len * UNIT;
+
+  const pA = { x: cx - aPx / 2, y: cy };
+  const pB = { x: cx + aPx / 2, y: cy };
+
+  bCtx.lineWidth = 4; bCtx.lineJoin = 'round'; bCtx.lineCap = 'round';
+
+  if (valid) {
+    // ✅ 成功：标准余弦定理
+    const midPx = sMid.len * UNIT, shortPx = sShort.len * UNIT;
+    const cosA = (aPx*aPx + midPx*midPx - shortPx*shortPx) / (2 * aPx * midPx);
+    const sinA = Math.sqrt(Math.max(0, 1 - cosA*cosA));
+    const pC = { x: pA.x + midPx * cosA, y: pA.y - midPx * sinA };
+
+    drawSideWithTicks(pA, pB, sLong);
+    drawSideWithTicks(pA, pC, sMid);
+    drawSideWithTicks(pB, pC, sShort);
+
+    bCtx.fillStyle = '#333'; bCtx.font = 'bold 14px "Microsoft YaHei"'; bCtx.textAlign = 'center';
+    bCtx.fillText('A', pA.x, pA.y + 20); bCtx.fillText('B', pB.x, pB.y + 20); bCtx.fillText('C', pC.x, pC.y - 12);
+
+    const angA = getAngle(pB, pA, pC), angB = getAngle(pA, pB, pC), angC = getAngle(pA, pC, pB);
+    showMsg(`✅ 成功！最长边${sLong.label}置底 | ∠A=${angA.toFixed(1)}° ∠B=${angB.toFixed(1)}° ∠C=${angC.toFixed(1)}°`, 'success');
+  } else {
+    // ❌ 失败：指向同一虚拟顶点，但长度不足
+    const targetH = Math.min(180, h * 0.3);
+    const target = { x: cx, y: cy - targetH }; // 虚拟相交点
+    
+    const midPx = sMid.len * UNIT, shortPx = sShort.len * UNIT;
+    
+    // 向量指向目标点
+    const vMid = { x: target.x - pA.x, y: target.y - pA.y };
+    const lMid = Math.hypot(vMid.x, vMid.y);
+    const pMidEnd = { x: pA.x + (vMid.x / lMid) * midPx, y: pA.y + (vMid.y / lMid) * midPx };
+
+    const vShort = { x: target.x - pB.x, y: target.y - pB.y };
+    const lShort = Math.hypot(vShort.x, vShort.y);
+    const pShortEnd = { x: pB.x + (vShort.x / lShort) * shortPx, y: pB.y + (vShort.y / lShort) * shortPx };
+
+    // 绘制三边
+    drawSideWithTicks(pA, pB, sLong);
+    drawSideWithTicks(pA, pMidEnd, sMid);
+    drawSideWithTicks(pB, pShortEnd, sShort);
+
+    // 🌟 绘制缺口虚线与双箭头
+    bCtx.setLineDash([6, 4]);
+    bCtx.strokeStyle = '#f44336';
+    bCtx.lineWidth = 2;
+    bCtx.beginPath(); bCtx.moveTo(pMidEnd.x, pMidEnd.y); bCtx.lineTo(pShortEnd.x, pShortEnd.y); bCtx.stroke();
+    bCtx.setLineDash([]);
+
+    // 缺口长度
+    const gapPx = Math.hypot(pMidEnd.x - pShortEnd.x, pMidEnd.y - pShortEnd.y);
+    const gapCm = (gapPx / UNIT).toFixed(1);
+    
+    // 绘制双箭头与标签
+    const mx = (pMidEnd.x + pShortEnd.x) / 2, my = (pMidEnd.y + pShortEnd.y) / 2;
+    bCtx.strokeStyle = '#f44336'; bCtx.lineWidth = 2;
+    bCtx.beginPath(); bCtx.moveTo(mx - 15, my); bCtx.lineTo(mx + 15, my); bCtx.stroke();
+    bCtx.beginPath(); bCtx.moveTo(mx - 10, my - 4); bCtx.lineTo(mx - 15, my); bCtx.lineTo(mx - 10, my + 4); bCtx.stroke();
+    bCtx.beginPath(); bCtx.moveTo(mx + 10, my - 4); bCtx.lineTo(mx + 15, my); bCtx.lineTo(mx + 10, my + 4); bCtx.stroke();
+
+    bCtx.fillStyle = '#f44336'; bCtx.font = 'bold 13px "Microsoft YaHei"'; bCtx.textAlign = 'center';
+    bCtx.fillText(`缺口 ${gapCm}cm`, mx, my - 12);
+
+    // 虚拟顶点标记（虚线圆）
+    bCtx.setLineDash([4, 3]); bCtx.strokeStyle = '#9e9e9e'; bCtx.lineWidth = 1.5;
+    bCtx.beginPath(); bCtx.arc(target.x, target.y, 8, 0, Math.PI * 2); bCtx.stroke();
+    bCtx.setLineDash([]);
+    bCtx.fillStyle = '#9e9e9e'; bCtx.font = '12px "Microsoft YaHei"';
+    bCtx.fillText('理论顶点', target.x, target.y + 20);
+
+    showMsg(`❌ 无法构成！${sMid.label}+${sShort.label}=${sMid.len+sShort.len}cm < ${sLong.label}(${sLong.len}cm)`, 'fail');
+  }
+}
+
+// 绘制带刻度点的线段
+function drawSideWithTicks(p1, p2, side) {
+  bCtx.beginPath(); bCtx.moveTo(p1.x, p1.y); bCtx.lineTo(p2.x, p2.y);
+  bCtx.strokeStyle = side.color; bCtx.stroke();
+  
+  for(let i = 1; i < side.len; i++) {
+    let t = i / side.len;
+    bCtx.beginPath(); 
+    bCtx.arc(p1.x + (p2.x - p1.x) * t, p1.y + (p2.y - p1.y) * t, 3.5, 0, Math.PI*2);
+    bCtx.fillStyle = '#fff'; bCtx.fill();
+    bCtx.strokeStyle = side.color; bCtx.lineWidth = 2; bCtx.stroke();
+  }
+  
+  let mx = (p1.x + p2.x)/2, my = (p1.y + p2.y)/2;
+  let dx = p2.x - p1.x, dy = p2.y - p1.y;
+  let nx = -dy, ny = dx;
+  let norm = Math.hypot(nx, ny) || 1;
+  
+  // 🆕 修改：标签只显示边名（如"边a"），不显示长度，避免混淆
+  let label = side.label; // 原来是 `${side.label} ${side.len}cm`
+
+  // 绘制标签背景（防遮挡）
+  bCtx.fillStyle = 'rgba(255,255,255,0.92)';
+  let tw = bCtx.measureText(label).width;
+  bCtx.fillRect(mx + (nx/norm)*14 - tw/2 - 4, my + (ny/norm)*14 - 10, tw + 8, 20);
+  bCtx.strokeStyle = side.color;
+  bCtx.lineWidth = 1.5;
+  bCtx.strokeRect(mx + (nx/norm)*14 - tw/2 - 4, my + (ny/norm)*14 - 10, tw + 8, 20);
+
+  // 绘制标签文字
+  bCtx.fillStyle = side.color; 
+  bCtx.font = 'bold 13px "Microsoft YaHei"';
+  bCtx.textAlign = 'center'; 
+  bCtx.textBaseline = 'middle';
+  bCtx.fillText(label, mx + (nx/norm)*14, my + (ny/norm)*14);
+}
+
+function getAngle(p1, v, p2) {
+  let dot = (p1.x-v.x)*(p2.x-v.x) + (p1.y-v.y)*(p2.y-v.y);
+  let cross = (p1.x-v.x)*(p2.y-v.y) - (p1.y-v.y)*(p2.x-v.x);
+  return Math.atan2(Math.abs(cross), dot) * 180 / Math.PI;
+}
+
+function showMsg(text, type) {
+  const msg = document.getElementById('build-msg');
+  msg.textContent = text;
+  msg.className = `build-msg ${type}`;
+  msg.style.display = 'block';
+}
+
+function resetBuild() {
+  buildSlots = [null, null, null];
+  document.querySelectorAll('.slot').forEach(s => {
+    s.classList.remove('filled');
+    s.querySelector('.slot-val').textContent = '-';
+  });
+  showMsg('👆 请将三条线段拖入下方卡槽', 'neutral');
+  drawBuild();
+}
+
+// ================= 交互事件 =================
+function initEvents() {
+  const pool = document.getElementById('seg-pool');
+  pool.addEventListener('pointerdown', e => {
+    const t = e.target.closest('.seg');
+    if(!t) return; e.preventDefault();
+    dragging = { 
+      len: parseFloat(t.dataset.len), 
+      color: t.dataset.color,
+      // 🆕 记录边名，用于标签联动
+      label: ['边a', '边b', '边c'][parseInt(t.parentElement.dataset.s) % 3] 
+    };
+    ghostEl = document.createElement('div');
+    ghostEl.className = 'ghost-seg';
+    ghostEl.style.backgroundColor = dragging.color;
+    ghostEl.textContent = dragging.len + 'cm';
+    ghostEl.style.width = t.getBoundingClientRect().width + 'px';
+    ghostEl.style.height = t.getBoundingClientRect().height + 'px';
+    ghostEl.style.left = e.clientX + 'px'; ghostEl.style.top = e.clientY + 'px';
+    document.body.appendChild(ghostEl);
+    bCanvas.setPointerCapture(e.pointerId);
+  });
+  window.addEventListener('pointermove', e => {
+    if(!ghostEl) return;
+    ghostEl.style.left = e.clientX + 'px'; ghostEl.style.top = e.clientY + 'px';
+  });
+  window.addEventListener('pointerup', e => {
+    if(!ghostEl) return; ghostEl.remove(); ghostEl = null;
+    const slots = document.querySelectorAll('.slot');
+    let hit = -1;
+    slots.forEach(s => {
+      const r = s.getBoundingClientRect();
+      if(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && buildSlots[parseInt(s.dataset.s)] === null) hit = parseInt(s.dataset.s);
+    });
+    if(hit !== -1 && dragging) {
+      buildSlots[hit] = dragging.len;
+      slots[hit].classList.add('filled');
+      slots[hit].querySelector('.slot-val').textContent = dragging.len + 'cm';
+      drawBuild();
+    }
+    dragging = null;
+  });
+  document.getElementById('btn-reset-build').addEventListener('click', resetBuild);
+}
+
+window.addEventListener('load', () => {
+  initBuildPool(); initEvents();
+  window.addEventListener('resize', resizeBuild);
+  resizeBuild();
+  showMsg('👆 请将三条线段拖入下方卡槽', 'neutral');
+});
+PageComponents.initPage({ title: '三角形构筑练习', icon: 'fa-shapes' });
+</script>
+<div id="app-footer"></div>
+</body>
+</html>

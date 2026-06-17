@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>随机分组器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .main-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .controls-row {
+      display: flex;
+      gap: var(--space-4);
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-4);
+    }
+
+    .groups-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+    }
+
+    .group-card {
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      border-top: 4px solid var(--primary);
+    }
+
+    .group-card:nth-child(2) { border-top-color: #ec4899; }
+    .group-card:nth-child(3) { border-top-color: #f59e0b; }
+    .group-card:nth-child(4) { border-top-color: #10b981; }
+    .group-card:nth-child(5) { border-top-color: #8b5cf6; }
+    .group-card:nth-child(6) { border-top-color: #ef4444; }
+    .group-card:nth-child(7) { border-top-color: #06b6d4; }
+    .group-card:nth-child(8) { border-top-color: #f97316; }
+
+    .group-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: var(--space-3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .group-members {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .member-item {
+      padding: var(--space-2) var(--space-3);
+      background: var(--card);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .member-item .remove {
+      color: var(--danger);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .member-item:hover .remove { opacity: 1; }
+
+    .input-area textarea {
+      width: 100%;
+      height: 150px;
+      padding: var(--space-3);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      resize: vertical;
+    }
+
+    .input-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .animating {
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="main-card">
+      <div class="text-center" style="margin-bottom: var(--space-4);">
+        <h1>👥 随机分组器</h1>
+        <p style="color: var(--text-light);">输入名单，随机分组，公平公正</p>
+      </div>
+
+      <div class="controls-row">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label class="form-label">学生名单（每行一个）</label>
+          <div class="input-area">
+            <textarea id="nameList" placeholder="输入学生姓名，每行一个">张三
+李四
+王五
+赵六
+陈七
+刘八
+周九
+吴十
+林小明
+黄小红
+杨小华
+郑小强</textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+          <div class="form-group">
+            <label class="form-label">分组方式</label>
+            <select class="form-select" id="groupMode" onchange="updateMode()">
+              <option value="count">按组数分</option>
+              <option value="size">按每组人数分</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="groupLabel">组数</label>
+            <input type="number" class="form-input" id="groupCount" value="4" min="2" max="20">
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="doGrouping()">
+            <i class="fas fa-random"></i> 开始分组
+          </button>
+        </div>
+      </div>
+
+      <div class="groups-container" id="groupsContainer">
+        <!-- 分组结果 -->
+      </div>
+
+      <div style="text-align: center; margin-top: var(--space-4);">
+        <button class="btn btn-secondary" onclick="exportGroups()">
+          <i class="fas fa-download"></i> 导出分组
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateMode() {
+      const mode = document.getElementById('groupMode').value;
+      document.getElementById('groupLabel').textContent = mode === 'count' ? '组数' : '每组人数';
+    }
+
+    function doGrouping() {
+      const text = document.getElementById('nameList').value;
+      const names = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+
+      if (names.length < 2) {
+        alert('请至少输入2个学生');
+        return;
+      }
+
+      const mode = document.getElementById('groupMode').value;
+      const count = parseInt(document.getElementById('groupCount').value);
+
+      if (mode === 'count' && count < 2) {
+        alert('组数至少为2');
+        return;
+      }
+
+      if (mode === 'size' && count < 1) {
+        alert('每组人数至少为1');
+        return;
+      }
+
+      // 打乱顺序
+      const shuffled = [...names].sort(() => Math.random() - 0.5);
+
+      // 分组
+      let groups;
+      if (mode === 'count') {
+        groups = Array.from({ length: count }, () => []);
+        shuffled.forEach((name, i) => {
+          groups[i % count].push(name);
+        });
+      } else {
+        groups = [];
+        for (let i = 0; i < shuffled.length; i += count) {
+          groups.push(shuffled.slice(i, i + count));
+        }
+      }
+
+      renderGroups(groups);
+    }
+
+    function renderGroups(groups) {
+      const container = document.getElementById('groupsContainer');
+      const icons = ['🅰️', '🅱️', '©️', '🇩', '🇪', '🇫', '🇬', '🇭'];
+
+      container.innerHTML = groups.map((group, i) => `
+        <div class="group-card animating" style="animation-delay: ${i * 0.1}s">
+          <div class="group-title">
+            ${icons[i] || `组${i+1}`}
+            <span style="font-size: 0.85rem; color: var(--text-light);">(${group.length}人)</span>
+          </div>
+          <div class="group-members">
+            ${group.map(name => `
+              <div class="member-item">
+                <span>${name}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      // 移除动画类
+      setTimeout(() => {
+        document.querySelectorAll('.group-card').forEach(card => {
+          card.classList.remove('animating');
+        });
+      }, 1000);
+    }
+
+    function exportGroups() {
+      const container = document.getElementById('groupsContainer');
+      if (!container.innerHTML) {
+        alert('请先进行分组');
+        return;
+      }
+
+      let text = '随机分组结果\n';
+      text += '==================\n\n';
+
+      document.querySelectorAll('.group-card').forEach((card, i) => {
+        const title = card.querySelector('.group-title').textContent.trim();
+        text += `${title}\n`;
+        card.querySelectorAll('.member-item span').forEach(span => {
+          text += `  - ${span.textContent}\n`;
+        });
+        text += '\n';
+      });
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `分组结果_${new Date().toLocaleDateString()}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    PageComponents.initPage({ title: '随机分组器', icon: 'fa-users' });
+  </script>
+  <div id="app-footer"></div>
+</body>
+</html>

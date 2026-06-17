@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>字数统计 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    .stat-item {
+      background: var(--card);
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .editor-area {
+      position: relative;
+    }
+
+    .editor-area textarea {
+      width: 100%;
+      height: 300px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      line-height: 1.8;
+      resize: vertical;
+      font-family: var(--font-sans);
+    }
+
+    .editor-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .char-frequency {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .freq-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .freq-item:last-child { border-bottom: none; }
+
+    .freq-char {
+      font-size: 1.2rem;
+      font-weight: 600;
+      width: 40px;
+      text-align: center;
+    }
+
+    .freq-bar {
+      flex: 1;
+      height: 20px;
+      background: var(--bg);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .freq-bar .fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 10px;
+      transition: width 0.3s;
+    }
+
+    .freq-count {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      min-width: 40px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>📊 字数统计工具</h1>
+      <p style="color: var(--text-light);">统计字数、字符数、段落数等</p>
+    </div>
+
+    <!-- 统计数据 -->
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value" id="totalChars">0</div>
+        <div class="stat-label">总字符数</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="chineseChars">0</div>
+        <div class="stat-label">中文字符</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="englishChars">0</div>
+        <div class="stat-label">英文字母</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="numbers">0</div>
+        <div class="stat-label">数字</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="punctuation">0</div>
+        <div class="stat-label">标点符号</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="wordCount">0</div>
+        <div class="stat-label">词数</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="lineCount">0</div>
+        <div class="stat-label">行数</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="paraCount">0</div>
+        <div class="stat-label">段落数</div>
+      </div>
+    </div>
+
+    <!-- 编辑器 -->
+    <div class="editor-area">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <label style="font-weight: 500;">输入或粘贴文本：</label>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-ghost btn-sm" onclick="clearText()">清空</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyStats()">复制统计</button>
+        </div>
+      </div>
+      <textarea id="textInput" oninput="analyze()" placeholder="在这里输入或粘贴文本..."></textarea>
+    </div>
+
+    <!-- 字符频率 -->
+    <div class="card" style="margin-top: var(--space-4);">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-chart-bar"></i> 字符频率（前20）</div>
+      </div>
+      <div class="char-frequency" id="charFrequency">
+        <p style="color: var(--text-muted); text-align: center; padding: 20px;">输入文本后显示字符频率</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function analyze() {
+      const text = document.getElementById('textInput').value;
+
+      // 基本统计
+      const totalChars = text.length;
+      const chineseChars = (text.match(/[一-龥]/g) || []).length;
+      const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+      const numbers = (text.match(/[0-9]/g) || []).length;
+      const punctuation = (text.match(/[^\w\s一-龥]/g) || []).length;
+      const lineCount = text ? text.split('\n').length : 0;
+      const paraCount = text ? text.split(/\n\s*\n/).filter(p => p.trim()).length : 0;
+
+      // 词数统计（简单实现）
+      const words = text.trim().split(/[\s一-龥]+/).filter(w => w.length > 0);
+      const wordCount = chineseChars + words.length;
+
+      // 更新显示
+      document.getElementById('totalChars').textContent = totalChars;
+      document.getElementById('chineseChars').textContent = chineseChars;
+      document.getElementById('englishChars').textContent = englishChars;
+      document.getElementById('numbers').textContent = numbers;
+      document.getElementById('punctuation').textContent = punctuation;
+      document.getElementById('wordCount').textContent = wordCount;
+      document.getElementById('lineCount').textContent = lineCount;
+      document.getElementById('paraCount').textContent = paraCount;
+
+      // 字符频率
+      analyzeFrequency(text);
+    }
+
+    function analyzeFrequency(text) {
+      const container = document.getElementById('charFrequency');
+
+      if (!text.trim()) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">输入文本后显示字符频率</p>';
+        return;
+      }
+
+      // 统计字符频率
+      const freq = {};
+      for (const char of text) {
+        if (char.trim() && /[一-龥a-zA-Z0-9]/.test(char)) {
+          freq[char] = (freq[char] || 0) + 1;
+        }
+      }
+
+      // 排序取前20
+      const sorted = Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">暂无数据</p>';
+        return;
+      }
+
+      const maxCount = sorted[0][1];
+
+      container.innerHTML = sorted.map(([char, count]) => `
+        <div class="freq-item">
+          <span class="freq-char">${char}</span>
+          <div class="freq-bar">
+            <div class="fill" style="width: ${count / maxCount * 100}%"></div>
+          </div>
+          <span class="freq-count">${count}次</span>
+        </div>
+      `).join('');
+    }
+
+    function clearText() {
+      document.getElementById('textInput').value = '';
+      analyze();
+    }
+
+    function copyStats() {
+      const stats = `
+字数统计结果：
+- 总字符数：${document.getElementById('totalChars').textContent}
+- 中文字符：${document.getElementById('chineseChars').textContent}
+- 英文字母：${document.getElementById('englishChars').textContent}
+- 数字：${document.getElementById('numbers').textContent}
+- 标点符号：${document.getElementById('punctuation').textContent}
+- 词数：${document.getElementById('wordCount').textContent}
+- 行数：${document.getElementById('lineCount').textContent}
+- 段落数：${document.getElementById('paraCount').textContent}
+      `.trim();
+
+      navigator.clipboard.writeText(stats).then(() => {
+        alert('统计结果已复制！');
+      });
+    }
+
+    // 初始化
+    analyze();
+  </script>
+  <div id="app-footer"></div>
+  <script>PageComponents.initPage({ title: '字数统计', icon: 'fa-font' });</script>
+</body>
+</html>

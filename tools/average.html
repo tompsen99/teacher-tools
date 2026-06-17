@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>平均数可视化课件 - 响应式增强版</title>
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/member.js"></script>
+    <script src="../assets/js/component.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        :root {
+            --primary: #1e40af;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-gradient);
+            height: 100vh;
+            height: 100svh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .title-input {
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: 700;
+            color: var(--primary);
+            border: none;
+            background: transparent;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .header-btns button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .header-btns button:hover { background: #f1f5f9; }
+        /* 按钮未激活时的样式 */
+        .btn-inactive { opacity: 0.5; background: #e2e8f0 !important; }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 12px;
+            gap: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 340px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 16px;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+
+        .sidebar.hidden {
+            width: 0;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .chart-area {
+            flex: 1;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0; 
+        }
+
+        .chart-tools {
+            position: absolute;
+            right: 24px;
+            top: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 60;
+        }
+
+        .tool-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: transform 0.2s;
+        }
+        .tool-btn:active { transform: scale(0.9); }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-around;
+            font-size: clamp(16px, 3vw, 24px);
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        canvas { 
+            flex: 1; 
+            width: 100% !important; 
+            height: 100% !important;
+            touch-action: none;
+        }
+
+        .data-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .value-controls { display: flex; align-items: center; gap: 4px; }
+        .value-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; color: white; }
+
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; }
+            .sidebar { width: 100%; height: 200px; }
+            .sidebar.hidden { height: 0; }
+            .chart-tools { top: auto; bottom: 40px; right: 20px; flex-direction: row; }
+        }
+
+        #success-msg {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(34, 197, 94, 0.9);
+            color: white; padding: 15px 30px; border-radius: 40px;
+            font-size: 24px; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+<div id="app-navbar"></div>
+<div id="app-modal"></div>
+
+<header>
+    <input id="custom-title" type="text" value="平均数实验课件" class="title-input">
+    <div class="header-btns">
+        <button onclick="toggleSidebar()" id="toggle-btn">📂 编辑区</button>
+        <button onclick="toggleStats()" id="toggle-stats-btn" class="btn-inactive">👁️ 统计面板</button>
+        <button onclick="toggleAvgLine()" id="toggle-line-btn" class="btn-inactive">👁️ 平均线</button>
+        <button onclick="undoLast()">↩️ 撤销</button>
+        <button onclick="resetCurrent()">🔄 重置</button>
+    </div>
+</header>
+
+<div class="main-container">
+    <div class="sidebar" id="sidebar">
+        <h3 style="margin-bottom:12px">数据管理</h3>
+        <div id="data-list"></div>
+        <button onclick="addStudent()" style="width:100%; padding:12px; margin-top:10px; background:var(--success); color:white; border:none; border-radius:10px; cursor:pointer">➕ 新增数据</button>
+    </div>
+
+    <div class="chart-area" id="chart-panel">
+        <div class="stat-row" id="stat-row" style="display: none;">
+            <span>总和: <span id="total" style="color:var(--primary)">0</span></span>
+            <span>人数: <span id="count" style="color:var(--primary)">0</span></span>
+            <span>平均数: <span id="avg" style="color:var(--danger)">0</span></span>
+        </div>
+
+        <div class="chart-tools">
+            <div class="tool-btn" onclick="adjustZoom(0.1)" title="放大">➕</div>
+            <div class="tool-btn" onclick="adjustZoom(-0.1)" title="缩小">➖</div>
+            <div class="tool-btn" onclick="resetZoom()" title="还原">🎯</div>
+            <div class="tool-btn" onclick="toggleFullScreen()" title="全屏">📺</div>
+        </div>
+
+        <div id="success-msg">同样多</div>
+        <canvas id="canvas"></canvas>
+    </div>
+</div>
+
+<script>
+    let defaultStudents = [
+        {id:1, name:"第一次", color:"#ef4444", blocks: Array(6).fill("#ef4444")},
+        {id:2, name:"第二次", color:"#3b82f6", blocks: Array(8).fill("#3b82f6")},
+        {id:3, name:"第三次", color:"#22c55e", blocks: Array(5).fill("#22c55e")},
+        {id:4, name:"第四次", color:"#ec4899", blocks: Array(10).fill("#ec4899")},
+        {id:5, name:"第五次", color:"#f59e0b", blocks: Array(6).fill("#f59e0b")}
+    ];
+    let students = JSON.parse(JSON.stringify(defaultStudents));
+
+    let history = [];
+    let canvas, ctx, chartPanel;
+    let isDragging = false;
+    let dragged = null;
+    let mousePos = { x: 0, y: 0 };
+    let zoomScale = 1.0; 
+    
+    // ==========================================
+    // 修改点：把这里的 true 改成 false，让它们默认隐藏
+    // ==========================================
+    let showStatsPanel = false;
+    let showAverageLine = false;
+
+    function init() {
+        canvas = document.getElementById('canvas');
+        ctx = canvas.getContext('2d');
+        chartPanel = document.getElementById('chart-panel');
+
+        const ro = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const { width, height } = entry.contentRect;
+                canvas.width = width;
+                const statHeight = showStatsPanel ? document.getElementById('stat-row').offsetHeight + 12 : 0;
+                canvas.height = height - statHeight - 20; 
+                draw();
+            }
+        });
+        ro.observe(chartPanel);
+
+        canvas.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove); 
+        window.addEventListener('mouseup', onMouseUp);      
+        canvas.addEventListener('touchstart', onTouch, {passive: false});
+        canvas.addEventListener('touchmove', onTouch, {passive: false});
+        canvas.addEventListener('touchend', onMouseUp);
+
+        renderSidebar();
+        updateStats();
+        saveHistory();
+    }
+
+    function toggleStats() {
+        showStatsPanel = !showStatsPanel;
+        const statRow = document.getElementById('stat-row');
+        const btn = document.getElementById('toggle-stats-btn');
+        statRow.style.display = showStatsPanel ? 'flex' : 'none';
+        btn.classList.toggle('btn-inactive', !showStatsPanel);
+        setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
+    }
+
+    function toggleAvgLine() {
+        showAverageLine = !showAverageLine;
+        const btn = document.getElementById('toggle-line-btn');
+        btn.classList.toggle('btn-inactive', !showAverageLine);
+        draw();
+    }
+
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        const btn = document.getElementById('toggle-btn');
+        sb.classList.toggle('hidden');
+        btn.classList.toggle('btn-inactive', sb.classList.contains('hidden'));
+    }
+
+    function adjustZoom(delta) { zoomScale = Math.min(Math.max(0.5, zoomScale + delta), 2.0); draw(); }
+    function resetZoom() { zoomScale = 1.0; draw(); }
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) chartPanel.requestFullscreen();
+        else document.exitFullscreen();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (students.length === 0) return;
+
+        const padding = { left: 60, right: 60, top: 40, bottom: 60 };
+        const chartW = canvas.width - padding.left - padding.right;
+        const chartH = canvas.height - padding.top - padding.bottom;
+        
+        const maxVal = Math.max(12, ...students.map(s => s.blocks.length + 2));
+        const unitH = (chartH / maxVal) * zoomScale;
+        const baseY = canvas.height - padding.bottom;
+
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.textAlign = 'right';
+        ctx.font = `${14 * zoomScale}px sans-serif`;
+        
+        for(let i=0; i<=maxVal; i++) {
+            let y = baseY - i * unitH;
+            ctx.beginPath(); 
+            ctx.moveTo(padding.left, y); 
+            ctx.lineTo(canvas.width - padding.right, y); 
+            ctx.stroke();
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(i, padding.left - 10, y + 5);
+        }
+
+        const barW = Math.min(60 * zoomScale, (chartW / students.length) * 0.6);
+        const spacing = (chartW - (students.length * barW)) / (students.length + 1);
+
+        students.forEach((s, i) => {
+            const x = padding.left + spacing + i * (barW + spacing);
+            
+            s.blocks.forEach((color, j) => {
+                if (isDragging && dragged && dragged.sIdx === i && dragged.bIdx === j) return;
+                const y = baseY - (j + 1) * unitH;
+                drawRect(x, y + 2, barW, unitH - 4, color);
+            });
+
+            ctx.fillStyle = '#334155';
+            ctx.font = `bold ${Math.max(12, 16 * zoomScale)}px Noto Sans SC`;
+            ctx.textAlign = 'center';
+            ctx.fillText(s.name, x + barW/2, baseY + 30);
+        });
+
+        if (showAverageLine) {
+            const avg = students.reduce((a,b)=>a+b.blocks.length,0) / students.length;
+            const avgY = baseY - avg * unitH;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(padding.left, avgY); ctx.lineTo(canvas.width-padding.right, avgY); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#ef4444';
+            ctx.textAlign = 'left';
+            ctx.fillText(`平均数:${avg.toFixed(1)}`, canvas.width - padding.right + 10, avgY + 5);
+        }
+
+        if (isDragging && dragged) {
+            drawRect(mousePos.x - barW/2, mousePos.y - unitH/2, barW, unitH-4, dragged.color, true);
+        }
+    }
+
+    function drawRect(x, y, w, h, color, shadow=false) {
+        ctx.fillStyle = color;
+        if(shadow) { ctx.shadowBlur=10; ctx.shadowColor='rgba(0,0,0,0.3)'; }
+        ctx.fillRect(x, y, w, h);
+        ctx.shadowBlur=0;
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.strokeRect(x+1, y+1, w-2, h-2);
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (e.clientX || e.touches[0].clientX) - rect.left,
+            y: (e.clientY || e.touches[0].clientY) - rect.top
+        };
+    }
+
+    function onMouseDown(e) {
+        const pos = getPos(e);
+        const padding = { left: 60, right: 60, top: 40, bottom: 60 };
+        const chartW = canvas.width - padding.left - padding.right;
+        const maxVal = Math.max(12, ...students.map(s => s.blocks.length + 2));
+        const unitH = ( (canvas.height - padding.top - padding.bottom) / maxVal ) * zoomScale;
+        const barW = Math.min(60 * zoomScale, (chartW / students.length) * 0.6);
+        const spacing = (chartW - (students.length * barW)) / (students.length + 1);
+
+        students.forEach((s, i) => {
+            const x = padding.left + spacing + i * (barW + spacing);
+            if (pos.x > x && pos.x < x + barW) {
+                const j = Math.floor((canvas.height - padding.bottom - pos.y) / unitH);
+                if (j >= 0 && j < s.blocks.length) {
+                    dragged = { sIdx: i, bIdx: j, color: s.blocks[j] };
+                    isDragging = true;
+                }
+            }
+        });
+    }
+
+    function onMouseMove(e) { if (!isDragging) return; mousePos = getPos(e); draw(); }
+
+    function onMouseUp(e) {
+        if (!isDragging) return;
+        const pos = mousePos;
+        const padding = { left: 60, right: 60, top: 40, bottom: 60 };
+        const chartW = canvas.width - padding.left - padding.right;
+        const barW = Math.min(60 * zoomScale, (chartW / students.length) * 0.6);
+        const spacing = (chartW - (students.length * barW)) / (students.length + 1);
+
+        students.forEach((s, i) => {
+            const x = padding.left + spacing + i * (barW + spacing);
+            if (pos.x > x - 20 && pos.x < x + barW + 20) {
+                if (i !== dragged.sIdx) {
+                    saveHistory();
+                    students[dragged.sIdx].blocks.splice(dragged.bIdx, 1);
+                    students[i].blocks.push(dragged.color);
+                }
+            }
+        });
+        isDragging = false; dragged = null; updateStats(); renderSidebar(); draw();
+    }
+
+    function onTouch(e) {
+        if(e.touches.length > 0) {
+            if(e.type === 'touchstart') onMouseDown(e);
+            if(e.type === 'touchmove') { e.preventDefault(); onMouseMove(e); }
+        }
+    }
+
+    function updateStats() {
+        const sum = students.reduce((a, s) => a + s.blocks.length, 0);
+        const avg = students.length ? (sum / students.length).toFixed(1) : 0;
+        document.getElementById('total').textContent = sum;
+        document.getElementById('count').textContent = students.length;
+        document.getElementById('avg').textContent = avg;
+        
+        const balanced = students.length > 0 && students.every(s => s.blocks.length === parseFloat(avg));
+        document.getElementById('success-msg').style.opacity = balanced ? 1 : 0;
+    }
+
+    function renderSidebar() {
+        const list = document.getElementById('data-list');
+        list.innerHTML = students.map((s, i) => `
+            <div class="data-item">
+                <div style="width:16px;height:16px;border-radius:50%;background:${s.color}"></div>
+                <input type="text" value="${s.name}" style="flex:1;border:none;background:transparent;font-size:16px;" onchange="students[${i}].name=this.value;draw()">
+                <div class="value-controls">
+                    <button class="value-btn" style="background:var(--danger)" onclick="changeVal(${i},-1)">-</button>
+                    <span style="width:25px;text-align:center;font-weight:bold">${s.blocks.length}</span>
+                    <button class="value-btn" style="background:var(--success)" onclick="changeVal(${i},1)">+</button>
+                </div>
+                <button onclick="removeStudent(${i})" style="border:none;background:none;cursor:pointer;font-size:18px">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    function changeVal(i, d) {
+        saveHistory();
+        if(d>0) students[i].blocks.push(students[i].color);
+        else if(students[i].blocks.length>0) students[i].blocks.pop();
+        updateStats(); renderSidebar(); draw();
+    }
+
+    function addStudent() {
+        saveHistory();
+        const colors = ["#ef4444","#3b82f6","#22c55e","#ec4899","#f59e0b"]; 
+        const c = colors[students.length % 5];
+        const num = ["一","二","三","四","五","六","七","八","九","十"][students.length] || (students.length + 1);
+        students.push({id:Date.now(), name:"第"+num+"次", color:c, blocks:Array(5).fill(c)});
+        updateStats(); renderSidebar(); draw();
+    }
+
+    function removeStudent(i) {
+        if(students.length<=1) return;
+        saveHistory();
+        students.splice(i,1);
+        updateStats(); renderSidebar(); draw();
+    }
+
+    function saveHistory() {
+        history.push(JSON.stringify(students));
+        if(history.length > 20) history.shift();
+    }
+
+    function undoLast() {
+        if(history.length <= 1) return;
+        history.pop();
+        students = JSON.parse(history[history.length-1]);
+        updateStats(); renderSidebar(); draw();
+    }
+
+    function resetCurrent() { 
+        if(confirm("确定重置为初始数据吗？")) {
+            students = JSON.parse(JSON.stringify(defaultStudents));
+            history = [];
+            saveHistory();
+            updateStats();
+            renderSidebar();
+            draw();
+        } 
+    }
+
+    window.onload = init;
+    PageComponents.initPage({ title: '平均数计算器', icon: 'fa-calculator' });
+</script>
+<div id="app-footer"></div>
+</body>
+</html>

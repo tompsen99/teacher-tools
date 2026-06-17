@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>答题卡生成器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: var(--space-5);
+      margin-top: var(--space-5);
+    }
+
+    .sheet-preview {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+    }
+
+    .answer-sheet {
+      background: white;
+      border: 2px solid #333;
+      padding: 20px;
+      font-family: 'SimSun', serif;
+    }
+
+    .sheet-header {
+      text-align: center;
+      border-bottom: 2px solid #333;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+
+    .sheet-header h2 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    .info-row .line {
+      border-bottom: 1px solid #333;
+      min-width: 120px;
+      display: inline-block;
+    }
+
+    .questions-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .question-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+    }
+
+    .question-number {
+      font-weight: 600;
+      min-width: 20px;
+    }
+
+    .options {
+      display: flex;
+      gap: 2px;
+    }
+
+    .option-circle {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid #333;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .fill-line {
+      border-bottom: 1px solid #333;
+      height: 24px;
+      margin: 4px 0;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      .answer-sheet { border: 2px solid #000; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar" class="no-print"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="content-grid">
+      <!-- 设置面板 -->
+      <div class="no-print">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-cog"></i> 设置</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">试卷标题</label>
+            <input type="text" class="form-input" id="sheetTitle" value="期末考试答题卡" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">学科</label>
+            <input type="text" class="form-input" id="subject" value="数学" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">选择题数量</label>
+            <input type="number" class="form-input" id="choiceCount" value="20" min="0" max="50" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">选项数量</label>
+            <select class="form-select" id="optionCount" onchange="generate()">
+              <option value="4">A B C D</option>
+              <option value="3">A B C</option>
+              <option value="5">A B C D E</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">填空题数量</label>
+            <input type="number" class="form-input" id="fillCount" value="6" min="0" max="20" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">每题填空数</label>
+            <input type="number" class="form-input" id="fillBlanks" value="2" min="1" max="5" onchange="generate()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">解答题数量</label>
+            <input type="number" class="form-input" id="essayCount" value="4" min="0" max="10" onchange="generate()">
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" onclick="window.print()">
+            <i class="fas fa-print"></i> 打印答题卡
+          </button>
+        </div>
+      </div>
+
+      <!-- 预览 -->
+      <div class="sheet-preview">
+        <div class="answer-sheet" id="answerSheet">
+          <!-- 答题卡内容 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function generate() {
+      const title = document.getElementById('sheetTitle').value || '答题卡';
+      const subject = document.getElementById('subject').value || '';
+      const choiceCount = parseInt(document.getElementById('choiceCount').value) || 0;
+      const optionCount = parseInt(document.getElementById('optionCount').value) || 4;
+      const fillCount = parseInt(document.getElementById('fillCount').value) || 0;
+      const fillBlanks = parseInt(document.getElementById('fillBlanks').value) || 1;
+      const essayCount = parseInt(document.getElementById('essayCount').value) || 0;
+
+      const options = 'ABCDE'.split('').slice(0, optionCount);
+
+      let html = `
+        <div class="sheet-header">
+          <h2>${title}</h2>
+          ${subject ? `<p style="font-size: 1.1rem;">${subject}</p>` : ''}
+          <div class="info-row">
+            <span>姓名：<span class="line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+            <span>班级：<span class="line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+            <span>学号：<span class="line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+          </div>
+        </div>
+      `;
+
+      // 选择题
+      if (choiceCount > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <h3 style="margin-bottom: 10px; font-size: 1rem;">一、选择题（每题只有一个正确答案）</h3>
+          <div class="questions-grid">`;
+
+        for (let i = 1; i <= choiceCount; i++) {
+          html += `<div class="question-item">
+            <span class="question-number">${i}.</span>
+            <div class="options">
+              ${options.map(o => `<span class="option-circle">${o}</span>`).join('')}
+            </div>
+          </div>`;
+        }
+
+        html += `</div></div>`;
+      }
+
+      // 填空题
+      if (fillCount > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <h3 style="margin-bottom: 10px; font-size: 1rem;">二、填空题</h3>`;
+
+        for (let i = 1; i <= fillCount; i++) {
+          html += `<div style="margin-bottom: 12px;">
+            <span style="font-weight: 600;">${i}.</span>
+            ${Array(fillBlanks).fill('<span class="fill-line" style="display: inline-block; width: 100px; margin: 0 10px;"></span>').join('')}
+          </div>`;
+        }
+
+        html += `</div>`;
+      }
+
+      // 解答题
+      if (essayCount > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <h3 style="margin-bottom: 10px; font-size: 1rem;">三、解答题</h3>`;
+
+        for (let i = 1; i <= essayCount; i++) {
+          html += `<div style="margin-bottom: 20px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">${i}.</div>
+            <div style="border: 1px solid #ccc; height: 120px; border-radius: 4px;"></div>
+          </div>`;
+        }
+
+        html += `</div>`;
+      }
+
+      document.getElementById('answerSheet').innerHTML = html;
+    }
+
+    // 初始化
+    generate();
+  </script>
+  <div id="app-footer" class="no-print"></div>
+  <script>PageComponents.initPage({ title: '答题卡生成器', icon: 'fa-clipboard-list' });</script>
+</body>
+</html>

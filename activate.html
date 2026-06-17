@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员激活 - 教师工具站</title>
+  <meta name="description" content="激活教师工具站会员，解锁全部高级功能">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="assets/js/config.js"></script>
+  <style>
+    :root {
+      --primary: #4facfe;
+      --primary-dark: #00f2fe;
+      --secondary: #667eea;
+      --accent: #764ba2;
+      --bg: #f0f2f5;
+      --card: #fff;
+      --text: #1a1a2e;
+      --light: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* 导航栏 */
+    .navbar {
+      background: var(--card);
+      padding: 15px 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+
+    .back-btn {
+      padding: 10px 20px;
+      background: #f1f5f9;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 主要内容 */
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .hero-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .hero-section h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-section p {
+      color: var(--light);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* 卡片布局 */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      transition: all 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: var(--light);
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+
+    .card-link {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-link:hover {
+      gap: 12px;
+    }
+
+    /* 激活表单 */
+    .activate-section {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      margin-bottom: 40px;
+    }
+
+    .activate-section h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 18px 20px;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      font-size: 1.1rem;
+      outline: none;
+      transition: all 0.3s;
+      font-family: monospace;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
+    }
+
+    .form-group input::placeholder {
+      color: #94a3b8;
+    }
+
+    .btn-activate {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-activate:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(79, 172, 254, 0.4);
+    }
+
+    .btn-activate:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .result-message {
+      margin-top: 20px;
+      padding: 15px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .result-message.success {
+      display: block;
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .result-message.error {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* 会员状态 */
+    .status-section {
+      background: linear-gradient(135deg, var(--secondary), var(--accent));
+      border-radius: 24px;
+      padding: 40px;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .status-section h2 {
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+
+    .status-card {
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 25px;
+      backdrop-filter: blur(10px);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .status-type {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .status-expiry {
+      opacity: 0.9;
+    }
+
+    /* 购买指南 */
+    .guide-section {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      margin-bottom: 40px;
+    }
+
+    .guide-section h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 25px;
+    }
+
+    .step {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .step-number {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 auto 15px;
+    }
+
+    .step h4 {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .step p {
+      color: var(--light);
+      font-size: 0.95rem;
+    }
+
+    /* 价格表 */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .pricing-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      text-align: center;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+
+    .pricing-card.featured {
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+
+    .pricing-card.featured:hover {
+      transform: scale(1.05) translateY(-5px);
+    }
+
+    .pricing-badge {
+      display: inline-block;
+      padding: 5px 15px;
+      background: linear-gradient(135deg, var(--warning), #d97706);
+      color: #fff;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    .pricing-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+    }
+
+    .pricing-price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+
+    .pricing-period {
+      color: var(--light);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .pricing-features {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 25px;
+    }
+
+    .pricing-features li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pricing-features li:last-child {
+      border-bottom: none;
+    }
+
+    .pricing-features i {
+      color: var(--success);
+    }
+
+    .btn-pricing {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--primary);
+      background: transparent;
+      border-radius: 12px;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-pricing:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .pricing-card.featured .btn-pricing {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-color: transparent;
+      color: #fff;
+    }
+
+    /* FAQ */
+    .faq-section {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    }
+
+    .faq-section h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+
+    .faq-question {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .faq-answer {
+      color: var(--light);
+      line-height: 1.8;
+      display: none;
+    }
+
+    .faq-item.active .faq-answer {
+      display: block;
+    }
+
+    .faq-item.active .faq-question i {
+      transform: rotate(180deg);
+    }
+
+    /* 页脚 */
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: var(--light);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .hero-section h1 { font-size: 2rem; }
+      .activate-section { padding: 25px; }
+      .pricing-card.featured { transform: none; }
+      .pricing-card.featured:hover { transform: translateY(-5px); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <a href="/" class="logo"><i class="fas fa-toolbox"></i> 教师工具站</a>
+    <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> 返回首页</a>
+  </nav>
+
+  <div class="container">
+    <!-- 标题区域 -->
+    <section class="hero-section">
+      <h1>🎓 会员激活中心</h1>
+      <p>购买卡密后在此激活，解锁全部高级功能，让教学更高效</p>
+    </section>
+
+    <!-- 会员状态（如果已登录） -->
+    <section class="status-section" id="statusSection" style="display: none;">
+      <h2>您的会员状态</h2>
+      <div class="status-card">
+        <div class="status-type" id="statusType">-</div>
+        <div class="status-expiry" id="statusExpiry">-</div>
+      </div>
+    </section>
+
+    <!-- 购买指南 -->
+    <section class="guide-section">
+      <h2>📱 如何购买</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h4>选择套餐</h4>
+          <p>根据需求选择适合的会员套餐</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h4>购买卡密</h4>
+          <p>通过小红书店铺或公众号购买</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h4>获取卡密</h4>
+          <p>付款后自动发送卡密到您的手机</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <h4>激活使用</h4>
+          <p>在下方输入卡密即可激活</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 价格表 -->
+    <section class="pricing-grid">
+      <div class="pricing-card">
+        <h3>试用体验</h3>
+        <div class="pricing-price">¥9.9</div>
+        <div class="pricing-period">7天会员</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 无限导出 PNG/PDF</li>
+          <li><i class="fas fa-check"></i> 去除水印</li>
+          <li><i class="fas fa-check"></i> 高清输出</li>
+          <li><i class="fas fa-check"></i> 7天有效期</li>
+        </ul>
+        <button class="btn-pricing" onclick="scrollToActivate()">立即购买</button>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="pricing-badge">最受欢迎</div>
+        <h3>月度会员</h3>
+        <div class="pricing-price">¥19.9</div>
+        <div class="pricing-period">30天会员</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 全部试用功能</li>
+          <li><i class="fas fa-check"></i> 优先客服支持</li>
+          <li><i class="fas fa-check"></i> 新功能抢先体验</li>
+          <li><i class="fas fa-check"></i> 30天有效期</li>
+        </ul>
+        <button class="btn-pricing" onclick="scrollToActivate()">立即购买</button>
+      </div>
+
+      <div class="pricing-card">
+        <h3>永久会员</h3>
+        <div class="pricing-price">¥49.9</div>
+        <div class="pricing-period">一次购买，永久使用</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> 全部月度功能</li>
+          <li><i class="fas fa-check"></i> 永久免费更新</li>
+          <li><i class="fas fa-check"></i> 终身技术支持</li>
+          <li><i class="fas fa-check"></i> 无限制使用</li>
+        </ul>
+        <button class="btn-pricing" onclick="scrollToActivate()">立即购买</button>
+      </div>
+    </section>
+
+    <!-- 激活表单 -->
+    <section class="activate-section" id="activateSection">
+      <h2>🔑 激活卡密</h2>
+      <div class="form-group">
+        <label>请输入您购买的卡密</label>
+        <input type="text" id="keyInput" placeholder="TEACHERPRO-xxxxxxxxxx" autocomplete="off">
+      </div>
+      <button class="btn-activate" id="btnActivate" onclick="activateKey()">
+        <i class="fas fa-unlock"></i> 立即激活
+      </button>
+      <div class="result-message" id="resultMessage"></div>
+    </section>
+
+    <!-- 购买渠道 -->
+    <section class="guide-section">
+      <h2>🛒 购买渠道</h2>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #ff2442, #ff6b81);">
+            <i class="fas fa-book"></i>
+          </div>
+          <h3>小红书店铺</h3>
+          <p>搜索"教师工具站"进入店铺，选择套餐后直接购买，卡密自动发送</p>
+          <a href="#" class="card-link">前往购买 <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #07c160, #06ad56);">
+            <i class="fab fa-weixin"></i>
+          </div>
+          <h3>微信公众号</h3>
+          <p>关注"教师工具站"公众号，回复"购买"获取购买链接</p>
+          <a href="#" class="card-link">关注公众号 <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+            <i class="fas fa-headset"></i>
+          </div>
+          <h3>客服咨询</h3>
+          <p>如有任何问题，可添加客服微信咨询，我们会及时回复</p>
+          <a href="#" class="card-link">联系客服 <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+      <h2>❓ 常见问题</h2>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>卡密在哪里购买？</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          您可以通过以下渠道购买卡密：<br>
+          1. 小红书搜索"教师工具站"进入店铺<br>
+          2. 微信公众号"教师工具站"回复"购买"<br>
+          3. 联系客服直接购买
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>卡密可以重复使用吗？</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          每个卡密只能使用一次，激活后即绑定当前设备。如需更换设备，请联系客服处理。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>激活后可以退款吗？</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          卡密激活后不支持退款。如有疑问，请在购买前先使用免费功能体验。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>会员到期后怎么办？</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          会员到期后，您可以重新购买卡密激活。之前的使用记录不会丢失。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>遇到问题怎么办？</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          如有任何问题，请通过以下方式联系我们：<br>
+          1. 微信公众号留言<br>
+          2. 小红书私信<br>
+          3. 添加客服微信（见购买渠道）
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 页脚 -->
+  <footer>
+    <p>© 2026 教师工具站 | 让教学更轻松</p>
+  </footer>
+
+  <!-- 引入会员模块 -->
+  <script src="assets/js/member.js"></script>
+
+  <script>
+    // 滚动到激活区域
+    function scrollToActivate() {
+      document.getElementById('activateSection').scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+      document.getElementById('keyInput').focus();
+    }
+
+    // 激活卡密
+    async function activateKey() {
+      const key = document.getElementById('keyInput').value.trim();
+      const btn = document.getElementById('btnActivate');
+      const result = document.getElementById('resultMessage');
+
+      if (!key) {
+        showResult('请输入卡密', 'error');
+        return;
+      }
+
+      if (!key.startsWith('TEACHERPRO-')) {
+        showResult('卡密格式错误，应以 TEACHERPRO- 开头', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 验证中...';
+      result.style.display = 'none';
+
+      try {
+        const res = await member.activate(key);
+
+        if (res.ok) {
+          showResult(res.msg, 'success');
+          document.getElementById('keyInput').value = '';
+          updateStatusDisplay();
+        } else {
+          showResult(res.msg, 'error');
+        }
+      } catch (e) {
+        showResult('激活失败，请检查网络连接', 'error');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-unlock"></i> 立即激活';
+    }
+
+    // 显示结果
+    function showResult(message, type) {
+      const result = document.getElementById('resultMessage');
+      result.textContent = message;
+      result.className = `result-message ${type}`;
+    }
+
+    // 回车激活
+    document.getElementById('keyInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') activateKey();
+    });
+
+    // 更新状态显示
+    function updateStatusDisplay() {
+      const statusSection = document.getElementById('statusSection');
+
+      if (member.isPro && member.memberData) {
+        statusSection.style.display = 'block';
+        const status = member.getStatusText();
+        document.getElementById('statusType').textContent = status.text;
+
+        if (member.memberData.expiry) {
+          const expiry = new Date(member.memberData.expiry);
+          document.getElementById('statusExpiry').textContent =
+            `到期时间：${expiry.getFullYear()}/${expiry.getMonth()+1}/${expiry.getDate()}`;
+        } else {
+          document.getElementById('statusExpiry').textContent = '永久有效';
+        }
+      } else {
+        statusSection.style.display = 'none';
+      }
+    }
+
+    // FAQ 切换
+    function toggleFaq(element) {
+      const item = element.parentElement;
+      item.classList.toggle('active');
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      updateStatusDisplay();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拼音标注工具 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.19.6/dist/index.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+      margin-top: var(--space-5);
+    }
+
+    .input-area textarea {
+      width: 100%;
+      height: 200px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1.2rem;
+      line-height: 2;
+      resize: vertical;
+      font-family: var(--font-sans);
+    }
+
+    .input-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .output-area {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      min-height: 200px;
+      box-shadow: var(--shadow);
+    }
+
+    .pinyin-text {
+      font-size: 1.5rem;
+      line-height: 2.5;
+      text-align: justify;
+    }
+
+    .pinyin-char {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 2px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+
+    .pinyin-char:hover {
+      background: var(--primary-bg);
+    }
+
+    .pinyin-char .pinyin {
+      font-size: 0.7em;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .pinyin-char .char {
+      font-size: 1em;
+      color: var(--text);
+    }
+
+    .settings-row {
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .tone-select {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .tone-btn {
+      padding: var(--space-1) var(--space-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all var(--transition-fast);
+    }
+
+    .tone-btn:hover { border-color: var(--primary); }
+    .tone-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .common-chars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    .common-char {
+      padding: var(--space-1) var(--space-2);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .common-char:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div id="app-modal"></div>
+
+  <div class="workspace">
+    <div class="text-center">
+      <h1>🔤 拼音标注工具</h1>
+      <p style="color: var(--text-light);">输入汉字，自动标注拼音</p>
+    </div>
+
+    <div class="settings-row">
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">显示风格</label>
+        <select class="form-select" id="displayStyle" onchange="convert()">
+          <option value="above">拼音在上</option>
+          <option value="below">拼音在下</option>
+          <option value="inline">拼音在右</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">拼音格式</label>
+        <div class="tone-select">
+          <button class="tone-btn active" data-type="tone" onclick="selectTone(this)">带声调</button>
+          <button class="tone-btn" data-type="num" onclick="selectTone(this)">数字声调</button>
+          <button class="tone-btn" data-type="none" onclick="selectTone(this)">无声调</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">字体大小</label>
+        <select class="form-select" id="fontSize" onchange="convert()">
+          <option value="1">小</option>
+          <option value="1.5" selected>中</option>
+          <option value="2">大</option>
+          <option value="2.5">特大</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-edit"></i> 输入汉字</div>
+            <button class="btn btn-ghost btn-sm" onclick="clearInput()">清空</button>
+          </div>
+          <div class="input-area">
+            <textarea id="inputText" oninput="convert()" placeholder="输入需要标注拼音的汉字...">春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。</textarea>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-book"></i> 常用字</div>
+          </div>
+          <div class="common-chars" id="commonChars"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="output-area">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+            <h3><i class="fas fa-eye"></i> 拼音标注结果</h3>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="copyResult()">
+                <i class="fas fa-copy"></i> 复制
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="printResult()">
+                <i class="fas fa-print"></i> 打印
+              </button>
+            </div>
+          </div>
+          <div class="pinyin-text" id="outputText" style="font-size: 1.5rem;">
+            <!-- 结果显示 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let toneType = 'tone';
+
+    // 常用字
+    const commonChars = '的一是了我他这中大来上个国到说人们为子和你地出会也时要就可以生';
+    const commonContainer = document.getElementById('commonChars');
+    commonContainer.innerHTML = commonChars.split('').map(c =>
+      `<span class="common-char" onclick="insertChar('${c}')">${c}</span>`
+    ).join('');
+
+    function insertChar(char) {
+      const textarea = document.getElementById('inputText');
+      const pos = textarea.selectionStart;
+      const text = textarea.value;
+      textarea.value = text.slice(0, pos) + char + text.slice(pos);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = pos + 1;
+      convert();
+    }
+
+    function selectTone(btn) {
+      document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      toneType = btn.dataset.type;
+      convert();
+    }
+
+    function clearInput() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('outputText').innerHTML = '';
+    }
+
+    function convert() {
+      const input = document.getElementById('inputText').value;
+      const style = document.getElementById('displayStyle').value;
+      const fontSize = document.getElementById('fontSize').value;
+
+      if (!input.trim()) {
+        document.getElementById('outputText').innerHTML = '';
+        return;
+      }
+
+      const output = document.getElementById('outputText');
+      output.style.fontSize = fontSize + 'rem';
+
+      let html = '';
+
+      for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+
+        if (/[一-龥]/.test(char)) {
+          // 是汉字
+          let pinyin = getPinyin(char);
+
+          if (style === 'above') {
+            html += `<span class="pinyin-char"><span class="pinyin">${pinyin}</span><span class="char">${char}</span></span>`;
+          } else if (style === 'below') {
+            html += `<span class="pinyin-char"><span class="char">${char}</span><span class="pinyin">${pinyin}</span></span>`;
+          } else {
+            html += `<span class="pinyin-char"><span class="char">${char}</span><sup class="pinyin" style="margin-left: 2px;">${pinyin}</sup></span>`;
+          }
+        } else {
+          // 非汉字直接输出
+          html += char;
+        }
+      }
+
+      output.innerHTML = html;
+    }
+
+    function getPinyin(char) {
+      try {
+        // 使用 pinyin-pro 库
+        if (typeof pinyinPro !== 'undefined') {
+          const result = pinyinPro.pinyin(char, {
+            toneType: toneType === 'tone' ? 'symbol' : toneType === 'num' ? 'num' : 'none',
+            type: 'array'
+          });
+          return result[0] || char;
+        }
+      } catch (e) {
+        console.warn('pinyin-pro not loaded');
+      }
+
+      // 回退方案：简单映射
+      return char;
+    }
+
+    function copyResult() {
+      const text = document.getElementById('outputText').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已复制到剪贴板！');
+      });
+    }
+
+    function printResult() {
+      const content = document.getElementById('outputText').innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>拼音标注</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; }
+            .pinyin-char {
+              display: inline-flex;
+              flex-direction: column;
+              align-items: center;
+              margin: 0 4px;
+            }
+            .pinyin { font-size: 0.7em; color: #333; }
+            .char { font-size: 24px; }
+          </style>
+        </head>
+        <body>
+          ${content}
+          <script>window.onload = () => { window.print(); window.close(); }<\/script>
+        </body>
+        </html>
+      `);
+    }
+
+    // 初始化
+    convert();
+  </script>
+  <div id="app-footer"></div>
+  <script>PageComponents.initPage({ title: '拼音标注工具', icon: 'fa-language' });</script>
+</body>
+</html>

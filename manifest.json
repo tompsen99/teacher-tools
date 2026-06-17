@@ -1,0 +1,40 @@
+{
+  "name": "教师工具站 - 在线教学工具集合",
+  "short_name": "教师工具站",
+  "description": "为教师打造的专业在线工具集合，免费使用，无需注册。",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#6366f1",
+  "background_color": "#f8fafc",
+  "lang": "zh-CN",
+  "categories": ["education", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "评语生成器",
+      "short_name": "评语",
+      "url": "/tools/comment-generator.html",
+      "description": "一键生成学生评语"
+    },
+    {
+      "name": "成绩统计分析",
+      "short_name": "成绩",
+      "url": "/tools/score-analyzer.html",
+      "description": "自动计算成绩统计"
+    },
+    {
+      "name": "座位表生成器",
+      "short_name": "座位",
+      "url": "/tools/seating.html",
+      "description": "快速生成教室座位表"
+    }
+  ]
+}

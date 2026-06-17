@@ -62,6 +62,7 @@
       align-items: flex-start;
       padding: var(--space-4);
       overflow: auto;
+      min-height: 300px;
     }
 
     .canvas-container {
@@ -295,12 +296,17 @@
       .workspace {
         grid-template-columns: 1fr;
         height: auto;
+        min-height: calc(100vh - 57px);
       }
 
       .sidebar {
         border-right: none;
         border-bottom: 1px solid var(--border);
         max-height: 50vh;
+      }
+
+      .main-area {
+        min-height: 500px;
       }
     }
   </style>
@@ -1409,7 +1415,13 @@
     }
 
     // ================= 启动 =================
-    init();
+    try {
+      init();
+    } catch(e) {
+      console.error('初始化失败:', e);
+      // 至少渲染一次
+      try { render(); } catch(e2) { console.error('渲染失败:', e2); }
+    }
   </script>
 </body>
 </html>

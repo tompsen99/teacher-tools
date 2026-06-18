@@ -7,241 +7,440 @@
       "file": "chicken-rabbit.html",
       "icon": "fa-egg",
       "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
-      "category": ["math", "teaching"],
+      "category": [
+        "math",
+        "teaching"
+      ],
       "description": "互动式鸡兔同笼动画演示，支持增减动物、假设全是鸡/兔、自动求解，适合希沃平板使用。",
-      "tags": ["数学", "动画", "互动", "希沃"],
-      "featured": true
+      "tags": [
+        "数学",
+        "动画",
+        "互动",
+        "希沃"
+      ],
+      "featured": true,
+      "pro": false
     },
     {
       "name": "评语生成器",
       "file": "comment-generator.html",
       "icon": "fa-comment-dots",
       "gradient": "linear-gradient(135deg, #ec4899, #db2777)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "一键生成学生评语，支持学习/品德/特长等多维度标签选择，批量生成。",
-      "tags": ["评语", "期末", "批量"],
-      "featured": true
+      "tags": [
+        "评语",
+        "期末",
+        "批量"
+      ],
+      "featured": true,
+      "pro": true
     },
     {
       "name": "成绩统计分析",
       "file": "score-analyzer.html",
       "icon": "fa-chart-bar",
       "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "自动计算平均分、最高分、优秀率、及格率，支持Excel导入，生成统计报告。",
-      "tags": ["成绩", "统计", "Excel"],
-      "featured": true
+      "tags": [
+        "成绩",
+        "统计",
+        "Excel"
+      ],
+      "featured": true,
+      "pro": true
     },
     {
       "name": "随机分组器",
       "file": "random-group.html",
       "icon": "fa-users",
       "gradient": "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "输入名单，一键随机分组，支持按组数或每组人数分组。",
-      "tags": ["分组", "随机", "课堂"],
-      "featured": true
+      "tags": [
+        "分组",
+        "随机",
+        "课堂"
+      ],
+      "featured": true,
+      "pro": false
     },
     {
       "name": "幸运转盘",
       "file": "spinner-wheel.html",
       "icon": "fa-sync-alt",
       "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "自定义选项的幸运转盘，支持随机选择，课堂互动神器。",
-      "tags": ["转盘", "随机", "互动"],
-      "featured": true
+      "tags": [
+        "转盘",
+        "随机",
+        "互动"
+      ],
+      "featured": true,
+      "pro": false
     },
     {
       "name": "单位换算",
       "file": "unit-converter.html",
       "icon": "fa-exchange-alt",
       "gradient": "linear-gradient(135deg, #10b981, #059669)",
-      "category": ["teaching", "office"],
+      "category": [
+        "teaching",
+        "office"
+      ],
       "description": "长度、重量、面积、体积、温度、时间、速度、数据等8类单位换算。",
-      "tags": ["单位", "换算", "数学"]
+      "tags": [
+        "单位",
+        "换算",
+        "数学"
+      ],
+      "pro": false
     },
     {
       "name": "拼音标注工具",
       "file": "pinyin.html",
       "icon": "fa-language",
       "gradient": "linear-gradient(135deg, #ef4444, #dc2626)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "输入汉字自动标注拼音，支持声调格式、显示位置、打印输出。",
-      "tags": ["拼音", "语文", "打印"]
+      "tags": [
+        "拼音",
+        "语文",
+        "打印"
+      ],
+      "pro": false
     },
     {
       "name": "答题卡生成器",
       "file": "answer-sheet.html",
       "icon": "fa-clipboard-list",
       "gradient": "linear-gradient(135deg, #6366f1, #4f46e5)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "自动生成标准答题卡，支持选择题、填空题、解答题，可打印。",
-      "tags": ["答题卡", "考试", "打印"]
+      "tags": [
+        "答题卡",
+        "考试",
+        "打印"
+      ],
+      "pro": false
     },
     {
       "name": "字数统计",
       "file": "text-counter.html",
       "icon": "fa-font",
       "gradient": "linear-gradient(135deg, #14b8a6, #0d9488)",
-      "category": ["office"],
+      "category": [
+        "office"
+      ],
       "description": "统计字数、字符数、行数、段落数，显示字符频率分布。",
-      "tags": ["字数", "统计", "写作"]
+      "tags": [
+        "字数",
+        "统计",
+        "写作"
+      ],
+      "pro": false
     },
     {
       "name": "日期计算器",
       "file": "date-calculator.html",
       "icon": "fa-calendar-alt",
       "gradient": "linear-gradient(135deg, #06b6d4, #0891b2)",
-      "category": ["office"],
+      "category": [
+        "office"
+      ],
       "description": "计算日期间隔、推算未来/过去日期，显示今日信息和小日历。",
-      "tags": ["日期", "计算", "日历"]
+      "tags": [
+        "日期",
+        "计算",
+        "日历"
+      ],
+      "pro": false
     },
     {
       "name": "颜色工具",
       "file": "color-picker.html",
       "icon": "fa-palette",
       "gradient": "linear-gradient(135deg, #a855f7, #9333ea)",
-      "category": ["design", "office"],
+      "category": [
+        "design",
+        "office"
+      ],
       "description": "颜色选择、HEX/RGB/HSL转换、常用色卡、渐变色生成。",
-      "tags": ["颜色", "设计", "渐变"]
+      "tags": [
+        "颜色",
+        "设计",
+        "渐变"
+      ],
+      "pro": false
     },
     {
       "name": "密码生成器",
       "file": "password-generator.html",
       "icon": "fa-key",
       "gradient": "linear-gradient(135deg, #64748b, #475569)",
-      "category": ["office"],
+      "category": [
+        "office"
+      ],
       "description": "生成安全随机密码，支持自定义长度、字符类型、批量生成。",
-      "tags": ["密码", "安全", "随机"]
+      "tags": [
+        "密码",
+        "安全",
+        "随机"
+      ],
+      "pro": false
     },
     {
       "name": "云朵字编辑器 Pro",
       "file": "cloud-text-pro.html",
       "icon": "fa-cloud",
       "gradient": "linear-gradient(135deg, #6366f1, #4f46e5)",
-      "category": ["design", "teaching"],
+      "category": [
+        "design",
+        "teaching"
+      ],
       "description": "增强版云朵字编辑器！支持多页PDF导出、多种纸张尺寸、20+字体。",
-      "tags": ["多页PDF", "多纸张", "Pro版", "推荐"],
-      "featured": true
+      "tags": [
+        "多页PDF",
+        "多纸张",
+        "Pro版",
+        "推荐"
+      ],
+      "featured": true,
+      "pro": true
     },
     {
       "name": "奖状批量生成器",
       "file": "certificate.html",
       "icon": "fa-award",
       "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
-      "category": ["design", "teaching"],
+      "category": [
+        "design",
+        "teaching"
+      ],
       "description": "8种模板风格、1-6年级预设、印章可拖拽、Excel批量导入、批量导出PDF。",
-      "tags": ["批量生成", "8模板", "PDF合并", "推荐"],
-      "featured": true
+      "tags": [
+        "批量生成",
+        "8模板",
+        "PDF合并",
+        "推荐"
+      ],
+      "featured": true,
+      "pro": true
     },
     {
       "name": "座位表生成器",
       "file": "seating.html",
       "icon": "fa-chair",
       "gradient": "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-      "category": ["teaching", "office"],
+      "category": [
+        "teaching",
+        "office"
+      ],
       "description": "快速生成教室座位表，支持拖拽调整、随机排座、Excel导入、导出打印。",
-      "tags": ["座位", "打印", "Excel导入"]
+      "tags": [
+        "座位",
+        "打印",
+        "Excel导入"
+      ],
+      "pro": true
     },
     {
       "name": "随机点名器",
       "file": "random-picker.html",
       "icon": "fa-random",
       "gradient": "linear-gradient(135deg, #ec4899, #db2777)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "随机公平点名，支持单人/多人模式、名单编辑、抽中记录、音效提示。",
-      "tags": ["点名", "随机", "课堂"]
+      "tags": [
+        "点名",
+        "随机",
+        "课堂"
+      ],
+      "pro": false
     },
     {
       "name": "课堂计时器",
       "file": "countdown.html",
       "icon": "fa-stopwatch",
       "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
-      "category": ["teaching"],
+      "category": [
+        "teaching"
+      ],
       "description": "倒计时/正计时，预设常用时间，进度环显示，时间到有音效提醒。",
-      "tags": ["计时器", "倒计时", "课堂"]
+      "tags": [
+        "计时器",
+        "倒计时",
+        "课堂"
+      ],
+      "pro": false
     },
     {
       "name": "课程表生成器",
       "file": "schedule.html",
       "icon": "fa-calendar-alt",
       "gradient": "linear-gradient(135deg, #10b981, #059669)",
-      "category": ["teaching", "office"],
+      "category": [
+        "teaching",
+        "office"
+      ],
       "description": "快速制作课程表，内置小学/中学模板，支持下拉选择课程和打印。",
-      "tags": ["课程表", "模板", "打印"]
+      "tags": [
+        "课程表",
+        "模板",
+        "打印"
+      ],
+      "pro": false
     },
     {
       "name": "图片压缩工具",
       "file": "image-compress.html",
       "icon": "fa-compress-alt",
       "gradient": "linear-gradient(135deg, #f97316, #ea580c)",
-      "category": ["image", "office"],
+      "category": [
+        "image",
+        "office"
+      ],
       "description": "批量压缩图片，支持质量调节、尺寸限制、格式转换，节省存储空间。",
-      "tags": ["图片压缩", "批量处理", "格式转换"]
+      "tags": [
+        "图片压缩",
+        "批量处理",
+        "格式转换"
+      ],
+      "pro": true
     },
     {
       "name": "图片拼接工具",
       "file": "image-merge.html",
       "icon": "fa-images",
       "gradient": "linear-gradient(135deg, #14b8a6, #0d9488)",
-      "category": ["image", "design"],
+      "category": [
+        "image",
+        "design"
+      ],
       "description": "多张图片拼接成一张，支持纵向/横向/网格布局，可调间距和背景。",
-      "tags": ["图片拼接", "拼图", "长图"]
+      "tags": [
+        "图片拼接",
+        "拼图",
+        "长图"
+      ],
+      "pro": true
     },
     {
       "name": "PDF工具箱",
       "file": "pdf-tools.html",
       "icon": "fa-file-pdf",
       "gradient": "linear-gradient(135deg, #ef4444, #dc2626)",
-      "category": ["office"],
+      "category": [
+        "office"
+      ],
       "description": "PDF合并、拆分、旋转、图片转PDF，一站式处理PDF文件。",
-      "tags": ["PDF合并", "PDF拆分", "图片转PDF"]
+      "tags": [
+        "PDF合并",
+        "PDF拆分",
+        "图片转PDF"
+      ],
+      "pro": true
     },
     {
       "name": "二维码生成器",
       "file": "qrcode.html",
       "icon": "fa-qrcode",
       "gradient": "linear-gradient(135deg, #6366f1, #4f46e5)",
-      "category": ["office", "teaching"],
+      "category": [
+        "office",
+        "teaching"
+      ],
       "description": "生成各种二维码，支持网址、文本、WiFi、名片等，可自定义颜色和样式。",
-      "tags": ["二维码", "WiFi码", "打印"]
+      "tags": [
+        "二维码",
+        "WiFi码",
+        "打印"
+      ],
+      "pro": false
     },
     {
       "name": "三角形拼接实验室",
       "file": "triangle.html",
       "icon": "fa-drafting-compass",
       "gradient": "linear-gradient(135deg, #4361ee, #3a86ff)",
-      "category": ["math", "teaching"],
+      "category": [
+        "math",
+        "teaching"
+      ],
       "description": "互动式三角形拼接教学工具，支持刚性线段拖拽、端点吸附、自动闭合检测。",
-      "tags": ["互动", "数学", "几何"]
+      "tags": [
+        "互动",
+        "数学",
+        "几何"
+      ],
+      "pro": false
     },
     {
       "name": "三角形构筑练习",
       "file": "triangle-build.html",
       "icon": "fa-shapes",
       "gradient": "linear-gradient(135deg, #f093fb, #f5576c)",
-      "category": ["math", "teaching"],
+      "category": [
+        "math",
+        "teaching"
+      ],
       "description": "三角形三边关系练习工具，帮助学生理解三角形两边之和大于第三边的性质。",
-      "tags": ["练习", "数学", "互动"]
+      "tags": [
+        "练习",
+        "数学",
+        "互动"
+      ],
+      "pro": false
     },
     {
       "name": "平均数计算器",
       "file": "average.html",
       "icon": "fa-calculator",
       "gradient": "linear-gradient(135deg, #10b981, #059669)",
-      "category": ["math", "teaching"],
+      "category": [
+        "math",
+        "teaching"
+      ],
       "description": "小学数学平均数教学工具，支持数据输入、自动计算、可视化展示。",
-      "tags": ["数学", "计算", "教学"]
+      "tags": [
+        "数学",
+        "计算",
+        "教学"
+      ],
+      "pro": false
     },
     {
       "name": "边的关系探索",
       "file": "edges.html",
       "icon": "fa-project-diagram",
       "gradient": "linear-gradient(135deg, #ef4444, #dc2626)",
-      "category": ["math", "teaching"],
+      "category": [
+        "math",
+        "teaching"
+      ],
       "description": "探索多边形边的性质，互动式学习几何知识。",
-      "tags": ["几何", "互动", "数学"]
+      "tags": [
+        "几何",
+        "互动",
+        "数学"
+      ],
+      "pro": false
     }
   ]
 }

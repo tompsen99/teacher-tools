@@ -100,8 +100,8 @@
     }
 
     .status-free { background: var(--bg-secondary); color: var(--text-light); }
-    .status-pro { background: linear-gradient(135deg, var(--warning-bg), #fde68a); color: #92400e; }
-    .status-trial { background: var(--info-bg); color: var(--info-dark); }
+    .status-pro { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; border: 1px solid #f59e0b40; }
+    .status-trial { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; border: 1px solid #3b82f640; }
 
     .act-btn {
       padding: var(--space-2) var(--space-5);
@@ -293,6 +293,37 @@
       gap: 0.8rem;
     }
 
+    /* ================= 会员专属标记 ================= */
+    .card-pro {
+      position: relative;
+    }
+    .card-pro .pro-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+      z-index: 2;
+    }
+    .card-pro.locked {
+      opacity: 0.75;
+    }
+    .card-pro.locked:hover {
+      opacity: 1;
+      border-color: #f59e0b;
+    }
+    .card-pro.locked .link {
+      color: #f59e0b;
+    }
+
     /* ================= 特性区域 ================= */
     .features {
       background: var(--card);
@@ -477,7 +508,7 @@
       <span id="memStatus" class="member-status status-free">
         <i class="fas fa-lock"></i> 游客
       </span>
-      <button class="act-btn" onclick="openPay()">
+      <button class="act-btn" id="actBtn" onclick="openPay()">
         <i class="fas fa-key"></i> 激活会员
       </button>
     </div>
@@ -500,6 +531,7 @@
     <div class="cat" data-c="teaching">教学</div>
     <div class="cat" data-c="office">办公</div>
     <div class="cat" data-c="math">数学</div>
+    <div class="cat" data-c="pro" style="color:#d97706">👑 会员</div>
   </div>
 
   <!-- 工具列表 -->
@@ -583,11 +615,26 @@
 
   <script>
     // ================= 会员 UI 更新 =================
-    function updMemUI() {
+    async function updMemUI() {
+      // 等待会员状态初始化完成（修复异步竞态）
+      try { await member.init(); } catch(e) {}
+
       const status = member.getStatusText();
       const el = document.getElementById('memStatus');
-      el.innerHTML = `<i class="fas fa-${member.isPro ? 'crown' : 'lock'}"></i> ${status.text}`;
-      el.className = `member-status ${status.class}`;
+      const actBtn = document.getElementById('actBtn');
+
+      if (member.isPro) {
+        el.innerHTML = `<i class="fas fa-crown"></i> ${status.text}`;
+        el.className = `member-status ${status.class}`;
+        if (actBtn) actBtn.style.display = 'none';
+      } else {
+        el.innerHTML = `<i class="fas fa-lock"></i> ${status.text}`;
+        el.className = `member-status ${status.class}`;
+        if (actBtn) actBtn.style.display = '';
+      }
+
+      // 重新渲染工具卡片以更新会员标记
+      if (window._allTools) renderTools(window._allTools);
     }
 
     // ================= 激活弹窗 =================
@@ -687,9 +734,20 @@
 
     function renderTools(tools) {
       const grid = document.getElementById('tGrid');
+      window._allTools = tools;
 
-      grid.innerHTML = tools.map(tool => `
-        <div class="card" data-category="${(tool.category || ['teaching']).join(' ')}" onclick="window.location.href='tools/${tool.file}'">
+      grid.innerHTML = tools.map(tool => {
+        const isPro = tool.pro;
+        const locked = isPro && !member.isPro;
+        const proClass = isPro ? 'card-pro' : '';
+        const lockClass = locked ? 'locked' : '';
+        const proBadge = isPro ? '<span class="pro-badge"><i class="fas fa-crown"></i> 会员</span>' : '';
+        const proCategory = isPro ? ' pro' : '';
+        const lockIcon = locked ? ' <i class="fas fa-lock" style="font-size:0.8rem"></i>' : '';
+
+        return `
+        <div class="card ${proClass} ${lockClass}" data-category="${(tool.category || ['teaching']).join(' ')}${proCategory}" onclick="window.location.href='tools/${tool.file}'">
+          ${proBadge}
           <div class="icon" style="background:${tool.gradient || 'linear-gradient(135deg, var(--primary), var(--primary-light))'}">
             <i class="fas ${tool.icon || 'fa-tools'}"></i>
           </div>
@@ -698,9 +756,10 @@
           <div class="tags">
             ${(tool.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
           </div>
-          <span class="link">立即使用 <i class="fas fa-arrow-right"></i></span>
+          <span class="link">${locked ? '激活解锁' : '立即使用'}${lockIcon} <i class="fas fa-arrow-right"></i></span>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       // 重新绑定事件
       bindCategoryFilter();
@@ -759,9 +818,9 @@
     }
 
     // ================= 初始化 =================
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       loadTools();
-      updMemUI();
+      await updMemUI();
     });
 
     // ================= Service Worker 注册 =================

@@ -969,7 +969,7 @@
       overrides[file] = mode;
       localStorage.setItem('tool_pro_overrides', JSON.stringify(overrides));
       const labels = { none: '🆓 免费', limited: '⏱️ 限次', required: '👑 会员专属' };
-      showToast(`${file} → ${labels[mode] || mode}`);
+      showToast(`${file} → ${labels[mode] || mode}（刷新前台页面生效）`);
       loadTools();
     }
 

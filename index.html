@@ -853,6 +853,20 @@
       await updMemUI();
     });
 
+    // ================= 监听管理后台设置变化（跨标签页自动刷新） =================
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'tool_pro_overrides' && window._allTools) {
+        const overrides = JSON.parse(e.newValue || '{}');
+        window._allTools.forEach(t => {
+          if (overrides[t.file] !== undefined) {
+            t.proMode = overrides[t.file];
+            t.pro = overrides[t.file] !== 'none';
+          }
+        });
+        renderTools(window._allTools);
+      }
+    });
+
     // ================= Service Worker 注册 =================
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

@@ -713,7 +713,10 @@
         // 应用管理后台的会员覆盖设置
         const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
         data.tools.forEach(t => {
-          if (overrides[t.file] !== undefined) t.pro = overrides[t.file];
+          if (overrides[t.file] !== undefined) {
+            t.proMode = overrides[t.file];
+            t.pro = overrides[t.file] !== 'none';
+          }
         });
 
         renderTools(data.tools);
@@ -743,17 +746,38 @@
       window._allTools = tools;
 
       grid.innerHTML = tools.map(tool => {
-        const isPro = tool.pro;
-        const locked = isPro && !member.isPro;
-        const proClass = isPro ? 'card-pro' : '';
-        const lockClass = locked ? 'locked' : '';
-        const proBadge = isPro ? '<span class="pro-badge"><i class="fas fa-crown"></i> 会员</span>' : '';
-        const proCategory = isPro ? ' pro' : '';
-        const lockIcon = locked ? ' <i class="fas fa-lock" style="font-size:0.8rem"></i>' : '';
+        const mode = tool.proMode || (tool.pro ? 'required' : 'none');
+        const isProMember = member.isPro;
+
+        let badge = '';
+        let cardClass = '';
+        let linkText = '立即使用';
+        let linkIcon = '';
+        let proCategory = '';
+
+        if (mode === 'required') {
+          proCategory = ' pro';
+          if (isProMember) {
+            badge = '<span class="pro-badge" style="background:linear-gradient(135deg,#10b981,#059669)"><i class="fas fa-check-circle"></i> 已解锁</span>';
+          } else {
+            badge = '<span class="pro-badge"><i class="fas fa-crown"></i> 会员专属</span>';
+            cardClass = 'card-pro locked';
+            linkText = '激活解锁';
+            linkIcon = ' <i class="fas fa-lock" style="font-size:0.8rem"></i>';
+          }
+        } else if (mode === 'limited') {
+          proCategory = ' pro';
+          if (isProMember) {
+            badge = '<span class="pro-badge" style="background:linear-gradient(135deg,#10b981,#059669)"><i class="fas fa-infinity"></i> 无限次</span>';
+          } else {
+            badge = '<span class="pro-badge" style="background:linear-gradient(135deg,#3b82f6,#2563eb)"><i class="fas fa-gift"></i> 每日3次</span>';
+            linkText = '免费试用';
+          }
+        }
 
         return `
-        <div class="card ${proClass} ${lockClass}" data-category="${(tool.category || ['teaching']).join(' ')}${proCategory}" onclick="window.location.href='tools/${tool.file}'">
-          ${proBadge}
+        <div class="card ${cardClass}" data-category="${(tool.category || ['teaching']).join(' ')}${proCategory}" onclick="window.location.href='tools/${tool.file}'">
+          ${badge}
           <div class="icon" style="background:${tool.gradient || 'linear-gradient(135deg, var(--primary), var(--primary-light))'}">
             <i class="fas ${tool.icon || 'fa-tools'}"></i>
           </div>
@@ -762,7 +786,7 @@
           <div class="tags">
             ${(tool.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
           </div>
-          <span class="link">${locked ? '激活解锁' : '立即使用'}${lockIcon} <i class="fas fa-arrow-right"></i></span>
+          <span class="link">${linkText}${linkIcon} <i class="fas fa-arrow-right"></i></span>
         </div>
       `;
       }).join('');

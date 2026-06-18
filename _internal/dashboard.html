@@ -922,21 +922,29 @@
         const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
 
         tbody.innerHTML = tools.map((t, i) => {
-          const isPro = overrides[t.file] !== undefined ? overrides[t.file] : (t.pro || false);
+          const mode = overrides[t.file] !== undefined ? overrides[t.file] : (t.proMode || (t.pro ? 'required' : 'none'));
+          const modeLabels = {
+            'none': '🆓 免费',
+            'limited': '⏱️ 限次',
+            'required': '👑 专属'
+          };
+          const modeColors = {
+            'none': 'color:var(--text-light)',
+            'limited': 'color:#3b82f6;font-weight:600',
+            'required': 'color:#d97706;font-weight:600'
+          };
           return `
           <tr>
             <td><i class="fas ${t.icon || 'fa-tools'}" style="margin-right:8px;color:var(--primary)"></i>${t.name}</td>
             <td style="font-family:monospace;font-size:0.8rem">${t.file}</td>
             <td>${(t.category || []).join(', ')}</td>
             <td>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <input type="checkbox" ${isPro ? 'checked' : ''}
-                  onchange="toggleToolPro('${t.file}', this.checked)"
-                  style="width:18px;height:18px;accent-color:#f59e0b">
-                <span style="font-size:0.85rem;${isPro ? 'color:#d97706;font-weight:600' : 'color:var(--text-light)'}">
-                  ${isPro ? '👑 会员' : '🆓 免费'}
-                </span>
-              </label>
+              <select onchange="toggleToolPro('${t.file}', this.value)"
+                style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);font-size:0.85rem;${modeColors[mode]};cursor:pointer">
+                <option value="none" ${mode==='none'?'selected':''}>🆓 免费</option>
+                <option value="limited" ${mode==='limited'?'selected':''}>⏱️ 限次（每日3次）</option>
+                <option value="required" ${mode==='required'?'selected':''}>👑 会员专属</option>
+              </select>
             </td>
             <td><span class="badge badge-success">上线</span></td>
           </tr>`;
@@ -956,12 +964,13 @@
       }
     }
 
-    function toggleToolPro(file, isPro) {
+    function toggleToolPro(file, mode) {
       const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
-      overrides[file] = isPro;
+      overrides[file] = mode;
       localStorage.setItem('tool_pro_overrides', JSON.stringify(overrides));
-      showToast(`${file} 已设为 ${isPro ? '👑 会员专属' : '🆓 免费'}`);
-      loadTools(); // 刷新显示
+      const labels = { none: '🆓 免费', limited: '⏱️ 限次', required: '👑 会员专属' };
+      showToast(`${file} → ${labels[mode] || mode}`);
+      loadTools();
     }
 
     // 导出覆盖设置为 JSON（可手动复制到 tools.json）

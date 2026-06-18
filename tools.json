@@ -19,7 +19,8 @@
         "希沃"
       ],
       "featured": true,
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "评语生成器",
@@ -36,7 +37,8 @@
         "批量"
       ],
       "featured": true,
-      "pro": true
+      "pro": true,
+      "proMode": "limited"
     },
     {
       "name": "成绩统计分析",
@@ -53,7 +55,8 @@
         "Excel"
       ],
       "featured": true,
-      "pro": true
+      "pro": true,
+      "proMode": "limited"
     },
     {
       "name": "随机分组器",
@@ -70,7 +73,8 @@
         "课堂"
       ],
       "featured": true,
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "幸运转盘",
@@ -87,7 +91,8 @@
         "互动"
       ],
       "featured": true,
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "单位换算",
@@ -104,7 +109,8 @@
         "换算",
         "数学"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "拼音标注工具",
@@ -120,7 +126,8 @@
         "语文",
         "打印"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "答题卡生成器",
@@ -136,7 +143,8 @@
         "考试",
         "打印"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "字数统计",
@@ -152,7 +160,8 @@
         "统计",
         "写作"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "日期计算器",
@@ -168,7 +177,8 @@
         "计算",
         "日历"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "颜色工具",
@@ -185,7 +195,8 @@
         "设计",
         "渐变"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "密码生成器",
@@ -201,7 +212,8 @@
         "安全",
         "随机"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "云朵字编辑器 Pro",
@@ -220,7 +232,8 @@
         "推荐"
       ],
       "featured": true,
-      "pro": true
+      "pro": true,
+      "proMode": "limited"
     },
     {
       "name": "奖状批量生成器",
@@ -239,7 +252,8 @@
         "推荐"
       ],
       "featured": true,
-      "pro": true
+      "pro": true,
+      "proMode": "required"
     },
     {
       "name": "座位表生成器",
@@ -256,7 +270,8 @@
         "打印",
         "Excel导入"
       ],
-      "pro": true
+      "pro": true,
+      "proMode": "required"
     },
     {
       "name": "随机点名器",
@@ -272,7 +287,8 @@
         "随机",
         "课堂"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "课堂计时器",
@@ -288,7 +304,8 @@
         "倒计时",
         "课堂"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "课程表生成器",
@@ -305,7 +322,8 @@
         "模板",
         "打印"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "图片压缩工具",
@@ -322,7 +340,8 @@
         "批量处理",
         "格式转换"
       ],
-      "pro": true
+      "pro": true,
+      "proMode": "limited"
     },
     {
       "name": "图片拼接工具",
@@ -339,7 +358,8 @@
         "拼图",
         "长图"
       ],
-      "pro": true
+      "pro": true,
+      "proMode": "limited"
     },
     {
       "name": "PDF工具箱",
@@ -355,7 +375,8 @@
         "PDF拆分",
         "图片转PDF"
       ],
-      "pro": true
+      "pro": true,
+      "proMode": "required"
     },
     {
       "name": "二维码生成器",
@@ -372,7 +393,8 @@
         "WiFi码",
         "打印"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "三角形拼接实验室",
@@ -389,7 +411,8 @@
         "数学",
         "几何"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "三角形构筑练习",
@@ -406,7 +429,8 @@
         "数学",
         "互动"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "平均数计算器",
@@ -423,7 +447,8 @@
         "计算",
         "教学"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     },
     {
       "name": "边的关系探索",
@@ -440,7 +465,8 @@
         "互动",
         "数学"
       ],
-      "pro": false
+      "pro": false,
+      "proMode": "none"
     }
   ]
 }

@@ -450,12 +450,15 @@
         <div class="panel-title">
           <i class="fas fa-cog"></i> API 配置
         </div>
+        <p style="color: var(--text-light); margin-bottom: 15px; font-size: 0.85rem;">
+          ⚠️ 必须配置 API 才能生成可激活的卡密。API 密钥即 Cloudflare Worker 的 ADMIN_KEY 环境变量。
+        </p>
         <div class="form-group">
           <label>Cloudflare Workers API 地址</label>
-          <input type="text" id="apiUrl" placeholder="https://your-worker.your-subdomain.workers.dev">
+          <input type="text" id="apiUrl" placeholder="https://teacher-tools-api.yuanxuchen99.workers.dev">
         </div>
         <div class="form-group">
-          <label>API 密钥</label>
+          <label>API 密钥（ADMIN_KEY）</label>
           <input type="password" id="apiKey" placeholder="输入管理 API 密钥">
         </div>
         <button class="btn btn-primary" onclick="saveSettings()">
@@ -565,6 +568,9 @@
     // 卡密管理
     let keysData = JSON.parse(localStorage.getItem('admin_keys') || '[]');
 
+    const API_URL = localStorage.getItem('api_url') || 'https://teacher-tools-api.yuanxuchen99.workers.dev';
+    const API_KEY = localStorage.getItem('api_key') || '';
+
     async function generateKeys() {
       const type = document.getElementById('keyType').value;
       const count = parseInt(document.getElementById('keyCount').value);
@@ -575,6 +581,44 @@
         return;
       }
 
+      // 优先使用后端 API 生成（写入 D1 数据库）
+      if (API_URL && API_KEY) {
+        try {
+          const resp = await fetch(`${API_URL}/api/admin/keys`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({ type, count, note })
+          });
+          const data = await resp.json();
+          if (data.success && data.keys) {
+            // 同步到本地显示
+            const newKeys = data.keys.map(k => ({
+              key: k.key,
+              type: k.type,
+              status: 'unused',
+              created: k.createdAt,
+              usedAt: null,
+              note: note || ''
+            }));
+            keysData = [...newKeys, ...keysData];
+            localStorage.setItem('admin_keys', JSON.stringify(keysData));
+            loadKeys();
+            loadStats();
+            showToast(`成功生成 ${count} 个卡密（已写入数据库）`);
+            return;
+          } else {
+            showToast('API 返回错误: ' + (data.error || '未知'), 'error');
+            return;
+          }
+        } catch (err) {
+          showToast('API 请求失败: ' + err.message + '，回退到本地生成', 'error');
+        }
+      }
+
+      // 本地生成（仅存储在浏览器，激活时不可用！）
       const newKeys = [];
       for (let i = 0; i < count; i++) {
         const key = await generateSingleKey(type);
@@ -585,7 +629,7 @@
       localStorage.setItem('admin_keys', JSON.stringify(keysData));
 
       loadKeys();
-      showToast(`成功生成 ${count} 个卡密`);
+      showToast(`本地生成 ${count} 个卡密（⚠️ 未写入数据库，无法激活！请配置 API 设置）`);
     }
 
     async function generateSingleKey(type) {
@@ -824,17 +868,32 @@
     }
 
     // 统计数据
-    function loadStats() {
+    async function loadStats() {
+      if (API_URL && API_KEY) {
+        try {
+          const resp = await fetch(`${API_URL}/api/admin/stats`, {
+            headers: { 'Authorization': `Bearer ${API_KEY}` }
+          });
+          const data = await resp.json();
+          if (data.totalMembers !== undefined) {
+            document.getElementById('totalMembers').textContent = data.totalMembers || 0;
+            document.getElementById('unusedKeys').textContent = data.unusedKeys || 0;
+            document.getElementById('todayActivations').textContent = data.todayActivations || 0;
+            document.getElementById('totalTools').textContent = data.totalTools || 27;
+            return;
+          }
+        } catch (err) { console.error('获取API统计失败:', err); }
+      }
+      // 回退到本地统计
       const keys = JSON.parse(localStorage.getItem('admin_keys') || '[]');
       const unused = keys.filter(k => k.status === 'unused').length;
       const today = new Date().toISOString().slice(0, 10);
       const todayKeys = keys.filter(k => k.usedAt && k.usedAt.startsWith(today)).length;
-      const tools = JSON.parse(localStorage.getItem('teacherToolsData') || '[]');
 
       document.getElementById('totalMembers').textContent = keys.filter(k => k.status === 'used').length;
       document.getElementById('unusedKeys').textContent = unused;
       document.getElementById('todayActivations').textContent = todayKeys;
-      document.getElementById('totalTools').textContent = tools.length;
+      document.getElementById('totalTools').textContent = 27;
     }
 
     // 设置
@@ -845,7 +904,8 @@
       localStorage.setItem('api_url', apiUrl);
       localStorage.setItem('api_key', apiKey);
 
-      showToast('设置已保存');
+      showToast('设置已保存，刷新页面生效');
+      setTimeout(() => location.reload(), 1000);
     }
 
     // 提示框

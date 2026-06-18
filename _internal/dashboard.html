@@ -820,30 +820,86 @@
     }
 
     // 会员管理
-    function loadMembers() {
-      // 模拟数据，实际应从 API 获取
-      const members = JSON.parse(localStorage.getItem('admin_members') || '[]');
+    async function loadMembers() {
       const tbody = document.getElementById('membersTableBody');
 
-      if (members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light); padding: 40px;">暂无会员数据</td></tr>';
-        return;
+      // 从 API 获取会员列表
+      if (API_URL && API_KEY) {
+        try {
+          const resp = await fetch(`${API_URL}/api/admin/members`, {
+            headers: { 'Authorization': `Bearer ${API_KEY}` }
+          });
+          const data = await resp.json();
+          if (data.success && data.members) {
+            if (data.members.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:40px">暂无会员数据</td></tr>';
+              return;
+            }
+            tbody.innerHTML = data.members.map(m => `
+              <tr>
+                <td style="font-family:monospace;font-size:0.85rem">${m.device_id || '-'}</td>
+                <td><span class="badge badge-info">${getTypeName(m.member_type)}</span></td>
+                <td>${formatDate(m.activated_at)}</td>
+                <td>${m.expiry_at ? formatDate(m.expiry_at) : '永久'}</td>
+                <td><span class="badge ${m.is_active ? 'badge-success' : 'badge-danger'}">${m.is_active ? '有效' : '已吊销'}</span></td>
+                <td>
+                  ${m.is_active ? `<button class="action-btn delete" onclick="deleteMember('${m.device_id}')" title="吊销"><i class="fas fa-ban"></i></button>` : '<span style="color:var(--text-light);font-size:0.8rem">已吊销</span>'}
+                </td>
+              </tr>
+            `).join('');
+            return;
+          }
+        } catch (err) {
+          console.error('从API获取会员失败:', err);
+        }
       }
 
+      // 回退到本地
+      const members = JSON.parse(localStorage.getItem('admin_members') || '[]');
+      if (members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:40px">暂无会员数据（请配置API）</td></tr>';
+        return;
+      }
       tbody.innerHTML = members.map(m => `
         <tr>
-          <td style="font-family: monospace; font-size: 0.85rem;">${m.deviceId || '-'}</td>
+          <td style="font-family:monospace;font-size:0.85rem">${m.deviceId || '-'}</td>
           <td><span class="badge badge-info">${getTypeName(m.type)}</span></td>
           <td>${formatDate(m.activatedAt)}</td>
           <td>${m.expiry ? formatDate(m.expiry) : '永久'}</td>
           <td><span class="badge ${m.isActive ? 'badge-success' : 'badge-danger'}">${m.isActive ? '有效' : '已过期'}</span></td>
-          <td>
-            <button class="action-btn delete" onclick="deleteMember('${m.deviceId}')" title="删除">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
+          <td>-</td>
         </tr>
       `).join('');
+    }
+
+    async function deleteMember(deviceId) {
+      if (!confirm('确定吊销此会员？该用户将立即失去会员权限。')) return;
+
+      if (API_URL && API_KEY) {
+        try {
+          const resp = await fetch(`${API_URL}/api/admin/members`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({ deviceId })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            showToast('会员已吊销');
+            loadMembers();
+            loadStats();
+            return;
+          } else {
+            showToast('操作失败: ' + (data.error || '未知'), 'error');
+          }
+        } catch (err) {
+          showToast('API 请求失败: ' + err.message, 'error');
+        }
+      } else {
+        showToast('请先配置 API', 'error');
+      }
     }
 
     // 工具管理

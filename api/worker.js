@@ -178,6 +178,10 @@ async function handleRequest(request, env) {
         return await handleListMembers(request, env, json);
       }
 
+      if (path === '/api/admin/members' && method === 'DELETE') {
+        return await handleDeleteMember(request, env, json);
+      }
+
       if (path === '/api/admin/stats' && method === 'GET') {
         return await handleStats(request, env, json);
       }
@@ -491,6 +495,28 @@ async function handleListMembers(request, env, json) {
     success: true,
     members: members.results,
   });
+}
+
+// 管理员：删除/吊销会员
+async function handleDeleteMember(request, env, json) {
+  const { deviceId } = await request.json();
+
+  if (!deviceId) {
+    return json({ error: '缺少设备ID' }, 400);
+  }
+
+  const db = env.DB;
+
+  // 将会员设为无效
+  const result = await db.prepare(
+    'UPDATE members SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?'
+  ).bind(deviceId).run();
+
+  if (result.meta.changes === 0) {
+    return json({ error: '会员不存在' }, 404);
+  }
+
+  return json({ success: true, message: '会员已吊销' });
 }
 
 // 管理员：获取统计数据

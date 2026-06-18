@@ -115,6 +115,11 @@ class MemberManager {
 
   // 获取每日使用限制
   async getUsageLimit(feature) {
+    // 检查管理后台覆盖：如果当前工具设为"免费"，直接返回无限
+    if (this._isCurrentToolFree()) {
+      return { allowed: true, remaining: Infinity };
+    }
+
     if (this.isPro) {
       return { allowed: true, remaining: Infinity };
     }
@@ -136,6 +141,23 @@ class MemberManager {
       remaining,
       limit
     };
+  }
+
+  // 检查当前工具是否被管理后台设为免费
+  _isCurrentToolFree() {
+    try {
+      const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
+      const currentFile = window.location.pathname.split('/').pop();
+      return overrides[currentFile] === 'none';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 工具页面应使用此方法代替直接检查 isPro
+  // 如果管理后台把工具设为免费，即使不是会员也返回 true
+  isToolAccessible() {
+    return this.isPro || this._isCurrentToolFree();
   }
 
   // 记录使用

@@ -170,6 +170,10 @@ async function handleRequest(request, env) {
         return await handleListKeys(request, env, json);
       }
 
+      if (path === '/api/admin/keys' && method === 'DELETE') {
+        return await handleDeleteKey(request, env, json);
+      }
+
       if (path === '/api/admin/members' && method === 'GET') {
         return await handleListMembers(request, env, json);
       }
@@ -432,6 +436,46 @@ async function handleListKeys(request, env, json) {
     success: true,
     keys: keys.results,
     total: keys.results.length,
+  });
+}
+
+// 管理员：删除卡密 + 吊销关联会员
+async function handleDeleteKey(request, env, json) {
+  const { keyValue } = await request.json();
+
+  if (!keyValue) {
+    return json({ error: '缺少卡密值' }, 400);
+  }
+
+  const db = env.DB;
+
+  // 先查询卡密信息
+  const key = await db.prepare(
+    'SELECT * FROM license_keys WHERE key_value = ?'
+  ).bind(keyValue).first();
+
+  if (!key) {
+    return json({ error: '卡密不存在' }, 404);
+  }
+
+  // 如果卡密已被使用，吊销关联的会员
+  if (key.status === 'used' && key.used_by_device) {
+    await db.prepare(
+      'UPDATE members SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE key_used = ? OR device_id = ?'
+    ).bind(keyValue, key.used_by_device).run();
+  }
+
+  // 删除卡密
+  await db.prepare(
+    'DELETE FROM license_keys WHERE key_value = ?'
+  ).bind(keyValue).run();
+
+  return json({
+    success: true,
+    message: key.status === 'used'
+      ? '卡密已删除，关联会员已吊销'
+      : '卡密已删除',
+    revoked: key.status === 'used'
   });
 }
 

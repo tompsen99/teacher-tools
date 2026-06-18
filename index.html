@@ -710,6 +710,12 @@
           return;
         }
 
+        // 应用管理后台的会员覆盖设置
+        const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
+        data.tools.forEach(t => {
+          if (overrides[t.file] !== undefined) t.pro = overrides[t.file];
+        });
+
         renderTools(data.tools);
 
       } catch (error) {

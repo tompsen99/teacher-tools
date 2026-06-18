@@ -422,9 +422,9 @@
       <div class="panel">
         <div class="panel-title">
           <i class="fas fa-tools"></i> 工具管理
-          <button class="btn btn-primary" style="margin-left: auto; padding: 8px 15px; font-size: 0.9rem;" onclick="showAddToolModal()">
-            <i class="fas fa-plus"></i> 添加工具
-          </button>
+          <span style="margin-left:auto; font-size:0.8rem; color:var(--text-light)">
+            切换会员限制需要手动更新 tools.json
+          </span>
         </div>
         <div class="table-container">
           <table>
@@ -433,8 +433,8 @@
                 <th>工具名称</th>
                 <th>文件</th>
                 <th>分类</th>
+                <th>会员限制</th>
                 <th>状态</th>
-                <th>操作</th>
               </tr>
             </thead>
             <tbody id="toolsTableBody">
@@ -794,28 +794,67 @@
     }
 
     // 工具管理
-    function loadTools() {
-      const tools = JSON.parse(localStorage.getItem('teacherToolsData') || '[]');
+    async function loadTools() {
       const tbody = document.getElementById('toolsTableBody');
 
-      tbody.innerHTML = tools.map((t, i) => `
-        <tr>
-          <td>${t.name}</td>
-          <td style="font-family: monospace; font-size: 0.85rem;">${t.file}</td>
-          <td>${(t.category || []).join(', ')}</td>
-          <td><span class="badge badge-success">上线</span></td>
-          <td>
-            <div class="action-btns">
-              <button class="action-btn edit" onclick="editTool(${i})" title="编辑">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="action-btn delete" onclick="deleteTool(${i})" title="删除">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      try {
+        const resp = await fetch('../tools.json?t=' + Date.now());
+        const data = await resp.json();
+        const tools = data.tools || [];
+
+        // 检查 localStorage 中的覆盖设置
+        const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
+
+        tbody.innerHTML = tools.map((t, i) => {
+          const isPro = overrides[t.file] !== undefined ? overrides[t.file] : (t.pro || false);
+          return `
+          <tr>
+            <td><i class="fas ${t.icon || 'fa-tools'}" style="margin-right:8px;color:var(--primary)"></i>${t.name}</td>
+            <td style="font-family:monospace;font-size:0.8rem">${t.file}</td>
+            <td>${(t.category || []).join(', ')}</td>
+            <td>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" ${isPro ? 'checked' : ''}
+                  onchange="toggleToolPro('${t.file}', this.checked)"
+                  style="width:18px;height:18px;accent-color:#f59e0b">
+                <span style="font-size:0.85rem;${isPro ? 'color:#d97706;font-weight:600' : 'color:var(--text-light)'}">
+                  ${isPro ? '👑 会员' : '🆓 免费'}
+                </span>
+              </label>
+            </td>
+            <td><span class="badge badge-success">上线</span></td>
+          </tr>`;
+        }).join('');
+      } catch (err) {
+        // 回退到 localStorage
+        const tools = JSON.parse(localStorage.getItem('teacherToolsData') || '[]');
+        tbody.innerHTML = tools.length ? tools.map(t => `
+          <tr>
+            <td>${t.name}</td>
+            <td style="font-family:monospace;font-size:0.8rem">${t.file}</td>
+            <td>${(t.category || []).join(', ')}</td>
+            <td>-</td>
+            <td><span class="badge badge-success">上线</span></td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-light)">加载失败</td></tr>';
+      }
+    }
+
+    function toggleToolPro(file, isPro) {
+      const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
+      overrides[file] = isPro;
+      localStorage.setItem('tool_pro_overrides', JSON.stringify(overrides));
+      showToast(`${file} 已设为 ${isPro ? '👑 会员专属' : '🆓 免费'}`);
+      loadTools(); // 刷新显示
+    }
+
+    // 导出覆盖设置为 JSON（可手动复制到 tools.json）
+    function exportProOverrides() {
+      const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
+      const text = JSON.stringify(overrides, null, 2);
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('已复制到剪贴板，请更新 tools.json 中的 pro 字段');
+      });
     }
 
     function showAddToolModal() {

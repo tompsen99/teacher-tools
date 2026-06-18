@@ -1026,6 +1026,9 @@
       const W = canvas.width;
       const H = canvas.height;
       const template = TEMPLATES[currentTemplate];
+      console.log('[render] called, canvas:', W, 'x', H, 'template:', currentTemplate, 'templateObj:', template);
+      if (!template) { console.error('[render] 模板不存在:', currentTemplate); return; }
+      if (W === 0 || H === 0) { console.error('[render] canvas尺寸为0'); return; }
 
       const name = document.getElementById('studentName').value || '某某同学';
       const award = document.getElementById('awardName').value || '三好学生';
@@ -1417,10 +1420,36 @@
     // ================= 启动 =================
     try {
       init();
+      // 调试: 检查canvas是否有内容
+      const _cv = document.getElementById('canvas');
+      if (_cv) {
+        console.log('[证书] canvas尺寸:', _cv.width, 'x', _cv.height);
+        console.log('[证书] canvas显示尺寸:', _cv.offsetWidth, 'x', _cv.offsetHeight);
+        console.log('[证书] currentTemplate:', currentTemplate);
+      }
+      // 检查canvas是否全白
+      const _data = _cv.getContext('2d').getImageData(0, 0, 1, 1).data;
+      if (_data[0] === 0 && _data[1] === 0 && _data[2] === 0 && _data[3] === 0) {
+        console.error('[证书] canvas左上角是透明的! render可能没有执行');
+        // 强制再渲染一次
+        render();
+      }
     } catch(e) {
       console.error('初始化失败:', e);
-      // 至少渲染一次
-      try { render(); } catch(e2) { console.error('渲染失败:', e2); }
+      // 在canvas上显示错误信息
+      try {
+        const _cv = document.getElementById('canvas');
+        if (_cv) {
+          _cv.width = 800; _cv.height = 600;
+          const _ctx = _cv.getContext('2d');
+          _ctx.fillStyle = '#fff3cd';
+          _ctx.fillRect(0, 0, 800, 600);
+          _ctx.fillStyle = '#856404';
+          _ctx.font = '16px Arial';
+          _ctx.fillText('渲染出错: ' + e.message, 20, 40);
+          _ctx.fillText('请刷新页面重试', 20, 70);
+        }
+      } catch(e2) { console.error('渲染失败:', e2); }
     }
   </script>
 </body>

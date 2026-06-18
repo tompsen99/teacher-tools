@@ -853,19 +853,31 @@
       await updMemUI();
     });
 
-    // ================= 监听管理后台设置变化（跨标签页自动刷新） =================
+    // ================= 监听管理后台设置变化 =================
+    // 方式1：跨标签页（storage 事件）
     window.addEventListener('storage', (e) => {
       if (e.key === 'tool_pro_overrides' && window._allTools) {
-        const overrides = JSON.parse(e.newValue || '{}');
-        window._allTools.forEach(t => {
-          if (overrides[t.file] !== undefined) {
-            t.proMode = overrides[t.file];
-            t.pro = overrides[t.file] !== 'none';
-          }
-        });
-        renderTools(window._allTools);
+        applyOverridesAndRender(window._allTools);
       }
     });
+
+    // 方式2：同标签页切回时（focus 事件）
+    window.addEventListener('focus', () => {
+      if (window._allTools) {
+        applyOverridesAndRender(window._allTools);
+      }
+    });
+
+    function applyOverridesAndRender(tools) {
+      const overrides = JSON.parse(localStorage.getItem('tool_pro_overrides') || '{}');
+      tools.forEach(t => {
+        if (overrides[t.file] !== undefined) {
+          t.proMode = overrides[t.file];
+          t.pro = overrides[t.file] !== 'none';
+        }
+      });
+      renderTools(tools);
+    }
 
     // ================= Service Worker 注册 =================
     if ('serviceWorker' in navigator) {

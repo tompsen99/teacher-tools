@@ -152,13 +152,30 @@ async function handleRequest(request, env) {
       return await handleUsage(request, env, jwtSecret, json);
     }
 
+    // 管理员登录（不需要 ADMIN_KEY 验证）
+    if (path === '/api/admin/login' && method === 'POST') {
+      return await handleAdminLogin(request, env, jwtSecret, json);
+    }
+
     // 管理员接口
     if (path.startsWith('/api/admin/')) {
       if (!adminKey) {
         return json({ error: '管理员密钥未配置' }, 500);
       }
       const authHeader = request.headers.get('Authorization');
-      if (!authHeader || authHeader !== `Bearer ${adminKey}`) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return json({ error: '未授权访问' }, 401);
+      }
+      const token = authHeader.substring(7);
+
+      // 支持两种认证方式：ADMIN_KEY 直接匹配 或 JWT 管理 Token
+      const isAdminKey = token === adminKey;
+      let isJwtAdmin = false;
+      if (!isAdminKey) {
+        const payload = await verifyToken(token, jwtSecret);
+        isJwtAdmin = payload && payload.role === 'admin';
+      }
+      if (!isAdminKey && !isJwtAdmin) {
         return json({ error: '未授权访问' }, 401);
       }
 
@@ -441,6 +458,40 @@ async function handleListKeys(request, env, json) {
     keys: keys.results,
     total: keys.results.length,
   });
+}
+
+// 管理员登录（密码验证在后端，密码哈希存在 Cloudflare 环境变量）
+async function handleAdminLogin(request, env, jwtSecret, json) {
+  const { password } = await request.json();
+
+  if (!password) {
+    return json({ success: false, error: '请输入密码' }, 400);
+  }
+
+  // 管理密码哈希存在环境变量 ADMIN_PWD_HASH 中
+  const storedHash = env.ADMIN_PWD_HASH;
+  if (!storedHash) {
+    return json({ success: false, error: '服务端未配置管理密码' }, 500);
+  }
+
+  // 计算输入密码的 SHA-256 哈希
+  const enc = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', enc.encode(password));
+  const inputHash = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (inputHash !== storedHash) {
+    return json({ success: false, error: '密码错误' }, 401);
+  }
+
+  // 生成管理会话 Token（有效期 2 小时）
+  const token = await generateToken(
+    { role: 'admin', iat: Date.now() },
+    jwtSecret,
+    2 * 60 * 60 // 2小时
+  );
+
+  return json({ success: true, token });
 }
 
 // 管理员：删除卡密 + 吊销关联会员

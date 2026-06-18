@@ -546,8 +546,9 @@
 
     // 退出登录
     function logout() {
-      sessionStorage.removeItem('admin_session');
+      sessionStorage.removeItem('admin_token');
       sessionStorage.removeItem('admin_auth_time');
+      localStorage.removeItem('api_key'); // 清除旧的硬编码 key
       window.location.href = 'a9f3e2b1.html';
     }
 
@@ -569,7 +570,13 @@
     let keysData = JSON.parse(localStorage.getItem('admin_keys') || '[]');
 
     const API_URL = localStorage.getItem('api_url') || 'https://teacher-tools-api.yuanxuchen99.workers.dev';
-    const API_KEY = localStorage.getItem('api_key') || '';
+    // 管理会话 Token（从登录页获取）
+    let API_KEY = sessionStorage.getItem('admin_token') || localStorage.getItem('api_key') || '';
+
+    // 如果没有登录 token，跳转到登录页
+    if (!sessionStorage.getItem('admin_token') && !localStorage.getItem('api_key')) {
+      window.location.href = 'a9f3e2b1.html';
+    }
 
     async function generateKeys() {
       const type = document.getElementById('keyType').value;

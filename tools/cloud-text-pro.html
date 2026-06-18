@@ -1576,7 +1576,7 @@
       if (!objs.length) return alert('画布为空');
 
       const u = getUsage();
-      if (!member.isPro && u.png >= 1) {
+      if (!member.isToolAccessible() && u.png >= 1) {
         alert('免费用户每日限导出 1 次 PNG。\n点击"激活会员"即可无限使用！');
         openPayModal();
         return;
@@ -1592,7 +1592,7 @@
       link.href = canvas.toDataURL('image/png');
       link.click();
 
-      if (!member.isPro) {
+      if (!member.isToolAccessible()) {
         u.png++;
         localStorage.setItem(USAGE_KEY, JSON.stringify(u));
       }
@@ -1612,7 +1612,7 @@
       if (!hasContent) return alert('所有页面都是空的');
 
       const u = getUsage();
-      if (!member.isPro && u.pdf >= 1) {
+      if (!member.isToolAccessible() && u.pdf >= 1) {
         alert('免费用户每日限导出 1 次 PDF。\n点击"激活会员"即可无限使用！');
         openPayModal();
         return;
@@ -1639,7 +1639,7 @@
       closePdfQualityModal();
 
       const u = getUsage();
-      if (!member.isPro && u.pdf >= 1) {
+      if (!member.isToolAccessible() && u.pdf >= 1) {
         alert('免费用户每日限导出 1 次 PDF。');
         openPayModal();
         return;
@@ -1707,7 +1707,7 @@
 
         pdf.save(`云朵字_${Date.now()}.pdf`);
 
-        if (!member.isPro) {
+        if (!member.isToolAccessible()) {
           u.pdf++;
           localStorage.setItem(USAGE_KEY, JSON.stringify(u));
         }

@@ -215,14 +215,15 @@ async function handleRequest(request, env) {
 
 // 激活卡密
 async function handleActivate(request, env, jwtSecret, json) {
-  const { key } = await request.json();
+  const { key, deviceId: clientDeviceId } = await request.json();
 
   if (!key || !key.startsWith('TEACHERPRO-')) {
     return json({ success: false, error: '卡密格式错误' });
   }
 
   const db = env.DB;
-  const deviceId = generateDeviceId(request);
+  // 优先使用客户端提供的设备 ID（浏览器指纹），否则用服务端生成的
+  const deviceId = clientDeviceId || generateDeviceId(request);
 
   // 查询卡密
   const licenseKey = await db.prepare(

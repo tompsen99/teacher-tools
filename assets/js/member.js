@@ -7,7 +7,35 @@ class MemberManager {
     this.token = localStorage.getItem(SITE_CONFIG.STORAGE.LICENSE);
     this.memberData = null;
     this.isPro = false;
+    this.deviceId = this._getOrCreateDeviceId();
     this.init();
+  }
+
+  // 生成或获取浏览器指纹作为设备 ID（存 localStorage，跨会话持久化）
+  _getOrCreateDeviceId() {
+    const key = 'teacher_device_id';
+    let id = localStorage.getItem(key);
+    if (id) return id;
+
+    // 基于浏览器特征生成指纹
+    const ua = navigator.userAgent || '';
+    const screen = `${screen.width}x${screen.height}`;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const lang = navigator.language || '';
+    const platform = navigator.platform || '';
+    const cores = navigator.hardwareConcurrency || 0;
+    const rand = Math.random().toString(36).substring(2, 10);
+
+    const raw = `${ua}|${screen}|${tz}|${lang}|${platform}|${cores}|${rand}`;
+    // 简单哈希
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      hash = hash & hash;
+    }
+    id = 'dev_' + Math.abs(hash).toString(36);
+    localStorage.setItem(key, id);
+    return id;
   }
 
   // 初始化，检查本地缓存的会员状态
@@ -35,7 +63,7 @@ class MemberManager {
       const response = await fetch(`${SITE_CONFIG.API_BASE}/activate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key })
+        body: JSON.stringify({ key, deviceId: this.deviceId })
       });
 
       const data = await response.json();

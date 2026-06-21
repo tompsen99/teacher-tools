@@ -1555,7 +1555,10 @@
       const btnF = document.getElementById('btnPdf');
       const u = getUsage();
 
-      if (member.isPro) {
+      // 使用 isToolAccessible() 检查（包括会员状态和管理后台覆盖）
+      const accessible = member.isToolAccessible();
+
+      if (accessible) {
         badge.innerHTML = '<i class="fas fa-crown"></i> 会员用户';
         badge.className = 'status-badge status-pro';
         btnP.disabled = false;
@@ -1733,10 +1736,17 @@
 
     async function doActivate() {
       await PageComponents.doActivation();
+      // 激活后更新UI（解锁按钮）
+      updateUI();
     }
 
+    // 注册激活回调（从其他页面激活时也能更新UI）
+    window.onMemberActivated = function() {
+      updateUI();
+    };
+
     // ================= 初始化 =================
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       PageComponents.initPage({
         title: '云朵字编辑器 Pro',
         icon: 'fa-cloud',
@@ -1747,6 +1757,8 @@
             <i class="fas fa-plus"></i>
           </button>`
       });
+      // 等待会员状态初始化完成再更新UI（修复竞态）
+      try { await member.init(); } catch(e) {}
       resizeCanvas();
       renderPageTabs();
       updateUI();

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数学公式速查 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/icons.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+    .tool-card {
+      background: var(--card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+    }
+    .tool-header {
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+    .tool-header h2 {
+      font-size: 1.8rem;
+      margin-bottom: var(--space-2);
+    }
+    .tool-header p {
+      color: var(--text-light);
+    }
+    .input-area {
+      margin-bottom: var(--space-5);
+    }
+    .input-area textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .input-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-5);
+    }
+    .btn {
+      padding: var(--space-2) var(--space-5);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .result-area {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      min-height: 200px;
+    }
+    .result-area h3 {
+      margin-bottom: var(--space-3);
+      color: var(--primary);
+    }
+    .result-content {
+      font-size: 1rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .stat-item {
+      background: var(--bg-secondary);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    .stat-item .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-item .label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: var(--space-1);
+    }
+    .list-area {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--primary-light);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .workspace { padding: var(--space-3); }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div class="workspace">
+    <div class="tool-card">
+      <div class="tool-header">
+        <h2><i class="fas fa-square-root-alt"></i> 数学公式速查</h2>
+        <p> | 教师工具站</p>
+      </div>
+      
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="filterCat('all')">全部</button>
+        <button class="btn btn-secondary" onclick="filterCat('area')">面积</button>
+        <button class="btn btn-secondary" onclick="filterCat('volume')">体积</button>
+        <button class="btn btn-secondary" onclick="filterCat('operation')">运算</button>
+      </div>
+      <div class="list-area" id="formulas"></div>
+      <script>
+        const formulas=[
+          {name:'长方形面积',formula:'S = a × b',cat:'area'},
+          {name:'正方形面积',formula:'S = a²',cat:'area'},
+          {name:'三角形面积',formula:'S = a × h ÷ 2',cat:'area'},
+          {name:'圆的面积',formula:'S = πr²',cat:'area'},
+          {name:'梯形面积',formula:'S = (a+b) × h ÷ 2',cat:'area'},
+          {name:'长方体体积',formula:'V = a × b × c',cat:'volume'},
+          {name:'正方体体积',formula:'V = a³',cat:'volume'},
+          {name:'圆柱体积',formula:'V = πr²h',cat:'volume'},
+          {name:'加法交换律',formula:'a + b = b + a',cat:'operation'},
+          {name:'乘法交换律',formula:'a × b = b × a',cat:'operation'},
+          {name:'乘法分配律',formula:'(a+b) × c = ac + bc',cat:'operation'},
+          {name:'除法性质',formula:'a ÷ b ÷ c = a ÷ (b×c)',cat:'operation'}
+        ];
+        function renderFormulas(cat){
+          const list=cat==='all'?formulas:formulas.filter(f=>f.cat===cat);
+          document.getElementById('formulas').innerHTML=list.map(f=>'<div class="list-item" style="cursor:pointer" onclick="navigator.clipboard.writeText(\''+f.formula+'\');PageComponents.showToast(\'已复制\')"><div><b>'+f.name+'</b></div><div style="font-family:monospace;font-size:1.1rem;color:var(--primary)">'+f.formula+'</div></div>').join('');
+        }
+        function filterCat(cat){renderFormulas(cat);}
+        renderFormulas('all');
+      </script>
+    </div>
+  </div>
+  <div id="app-footer"></div>
+  <div id="app-modal"></div>
+  <script>
+    PageComponents.initPage({ title: '数学公式速查', icon: 'fa-square-root-alt' });
+  </script>
+</body>
+</html>

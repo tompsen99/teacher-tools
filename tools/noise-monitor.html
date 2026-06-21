@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课堂噪音监测 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/icons.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+    .tool-card {
+      background: var(--card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+    }
+    .tool-header {
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+    .tool-header h2 {
+      font-size: 1.8rem;
+      margin-bottom: var(--space-2);
+    }
+    .tool-header p {
+      color: var(--text-light);
+    }
+    .input-area {
+      margin-bottom: var(--space-5);
+    }
+    .input-area textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .input-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-5);
+    }
+    .btn {
+      padding: var(--space-2) var(--space-5);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .result-area {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      min-height: 200px;
+    }
+    .result-area h3 {
+      margin-bottom: var(--space-3);
+      color: var(--primary);
+    }
+    .result-content {
+      font-size: 1rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .stat-item {
+      background: var(--bg-secondary);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    .stat-item .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-item .label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: var(--space-1);
+    }
+    .list-area {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--primary-light);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .workspace { padding: var(--space-3); }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div class="workspace">
+    <div class="tool-card">
+      <div class="tool-header">
+        <h2><i class="fas fa-volume-up"></i> 课堂噪音监测</h2>
+        <p> | 教师工具站</p>
+      </div>
+      
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startMonitor()"><i class="fas fa-microphone"></i> 开始监测</button>
+        <button class="btn btn-secondary" onclick="stopMonitor()"><i class="fas fa-stop"></i> 停止</button>
+      </div>
+      <div class="input-area">
+        <label>噪音阈值</label>
+        <input type="range" id="threshold" min="0" max="100" value="50" style="width:100%">
+      </div>
+      <div id="monitorArea" style="text-align:center;padding:40px">
+        <div id="noiseLevel" style="font-size:6rem;font-weight:800;color:var(--success)">0</div>
+        <div style="font-size:1.2rem;color:var(--text-light)">分贝</div>
+        <div id="noiseBar" style="margin-top:20px;background:var(--bg-secondary);border-radius:20px;height:30px;overflow:hidden"><div id="noiseFill" style="height:100%;width:0%;border-radius:20px;transition:all 0.1s;background:var(--success)"></div></div>
+        <div id="noiseStatus" style="margin-top:12px;font-size:1.2rem">安静</div>
+      </div>
+      <script>
+        let audioCtx,analyser,microphone,animFrame;
+        async function startMonitor(){
+          try{
+            const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+            audioCtx=new AudioContext();
+            analyser=audioCtx.createAnalyser();
+            microphone=audioCtx.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+            analyser.fftSize=256;
+            const data=new Uint8Array(analyser.frequencyBinCount);
+            function update(){
+              analyser.getByteFrequencyData(data);
+              const avg=data.reduce((a,b)=>a+b,0)/data.length;
+              const level=Math.round(avg/2.55);
+              const threshold=parseInt(document.getElementById('threshold').value);
+              document.getElementById('noiseLevel').textContent=level;
+              document.getElementById('noiseFill').style.width=level+'%';
+              if(level>threshold){
+                document.getElementById('noiseFill').style.background='var(--danger)';
+                document.getElementById('noiseLevel').style.color='var(--danger)';
+                document.getElementById('noiseStatus').textContent='⚠️ 太吵了！';
+                document.getElementById('noiseStatus').style.color='var(--danger)';
+              }else if(level>threshold*0.7){
+                document.getElementById('noiseFill').style.background='var(--warning)';
+                document.getElementById('noiseLevel').style.color='var(--warning)';
+                document.getElementById('noiseStatus').textContent='有点吵';
+                document.getElementById('noiseStatus').style.color='var(--warning)';
+              }else{
+                document.getElementById('noiseFill').style.background='var(--success)';
+                document.getElementById('noiseLevel').style.color='var(--success)';
+                document.getElementById('noiseStatus').textContent='安静';
+                document.getElementById('noiseStatus').style.color='var(--success)';
+              }
+              animFrame=requestAnimationFrame(update);
+            }
+            update();
+          }catch(e){alert('无法访问麦克风：'+e.message);}
+        }
+        function stopMonitor(){if(audioCtx)audioCtx.close();cancelAnimationFrame(animFrame);}
+      </script>
+    </div>
+  </div>
+  <div id="app-footer"></div>
+  <div id="app-modal"></div>
+  <script>
+    PageComponents.initPage({ title: '课堂噪音监测', icon: 'fa-volume-up' });
+  </script>
+</body>
+</html>

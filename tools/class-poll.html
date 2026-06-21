@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课堂投票器 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/icons.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+    .tool-card {
+      background: var(--card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+    }
+    .tool-header {
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+    .tool-header h2 {
+      font-size: 1.8rem;
+      margin-bottom: var(--space-2);
+    }
+    .tool-header p {
+      color: var(--text-light);
+    }
+    .input-area {
+      margin-bottom: var(--space-5);
+    }
+    .input-area textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .input-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-5);
+    }
+    .btn {
+      padding: var(--space-2) var(--space-5);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .result-area {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      min-height: 200px;
+    }
+    .result-area h3 {
+      margin-bottom: var(--space-3);
+      color: var(--primary);
+    }
+    .result-content {
+      font-size: 1rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .stat-item {
+      background: var(--bg-secondary);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    .stat-item .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-item .label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: var(--space-1);
+    }
+    .list-area {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--primary-light);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .workspace { padding: var(--space-3); }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div class="workspace">
+    <div class="tool-card">
+      <div class="tool-header">
+        <h2><i class="fas fa-poll"></i> 课堂投票器</h2>
+        <p> | 教师工具站</p>
+      </div>
+      
+      <div class="input-area">
+        <label>投票问题</label>
+        <input type="text" id="question" value="你最喜欢的季节是？" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:var(--radius-md);font-size:1rem;margin-bottom:8px">
+        <label>选项（每行一个）</label>
+        <textarea id="options" style="min-height:80px">春天
+夏天
+秋天
+冬天</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="createPoll()"><i class="fas fa-play"></i> 创建投票</button>
+        <button class="btn btn-secondary" onclick="resetPoll()"><i class="fas fa-redo"></i> 重置</button>
+      </div>
+      <div id="pollArea"></div>
+      <script>
+        let votes={};
+        function createPoll(){
+          const opts=document.getElementById('options').value.trim().split('\n');
+          votes={};opts.forEach(o=>{if(o.trim())votes[o.trim()]=0});
+          renderPoll();
+        }
+        function renderPoll(){
+          const total=Object.values(votes).reduce((a,b)=>a+b,0)||1;
+          const max=Math.max(...Object.values(votes));
+          document.getElementById('pollArea').innerHTML='<h3>'+document.getElementById('question').value+'</h3>'+
+            Object.entries(votes).sort((a,b)=>b[1]-a[1]).map(([opt,cnt])=>
+              '<div style="margin:8px 0;cursor:pointer" onclick="vote(\''+opt+'\')"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>'+opt+'</span><span>'+cnt+'票 ('+Math.round(cnt/total*100)+'%)</span></div><div style="background:var(--bg-secondary);border-radius:10px;height:24px;overflow:hidden"><div style="background:'+(cnt===max?'var(--primary)':'var(--primary-light)')+';height:100%;width:'+cnt/total*100+'%;border-radius:10px;transition:width 0.3s"></div></div></div>'
+            ).join('');
+        }
+        function vote(opt){votes[opt]++;renderPoll();}
+        function resetPoll(){votes={};document.getElementById('pollArea').innerHTML='';}
+      </script>
+    </div>
+  </div>
+  <div id="app-footer"></div>
+  <div id="app-modal"></div>
+  <script>
+    PageComponents.initPage({ title: '课堂投票器', icon: 'fa-poll' });
+  </script>
+</body>
+</html>

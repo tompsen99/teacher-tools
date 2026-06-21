@@ -467,6 +467,497 @@
       ],
       "pro": false,
       "proMode": "none"
+    },
+    {
+      "name": "倒计时日历",
+      "file": "countdown-calendar.html",
+      "icon": "fa-calendar-check",
+      "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
+      "category": [
+        "teaching"
+      ],
+      "description": "设置考试/活动倒计时，生成可视化倒计时卡片，可导出图片。",
+      "tags": [
+        "倒计时",
+        "考试",
+        "日历"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "单词卡片",
+      "file": "flash-cards.html",
+      "icon": "fa-clone",
+      "gradient": "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+      "category": [
+        "teaching"
+      ],
+      "description": "制作单词/知识点闪卡，支持正面背面翻转，批量导入导出。",
+      "tags": [
+        "单词",
+        "记忆",
+        "闪卡"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "课堂积分管理",
+      "file": "points-manager.html",
+      "icon": "fa-star",
+      "gradient": "linear-gradient(135deg, #f59e0b, #ef4444)",
+      "category": [
+        "teaching"
+      ],
+      "description": "管理学生课堂表现积分，支持加减分、排行榜、Excel导入。",
+      "tags": [
+        "积分",
+        "表现",
+        "管理"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "思维导图",
+      "file": "mind-map.html",
+      "icon": "fa-brain",
+      "gradient": "linear-gradient(135deg, #10b981, #059669)",
+      "category": [
+        "teaching"
+      ],
+      "description": "快速创建思维导图，支持节点展开折叠，导出PNG图片。",
+      "tags": [
+        "思维",
+        "导图",
+        "整理"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "成绩录入器",
+      "file": "grade-entry.html",
+      "icon": "fa-edit",
+      "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
+      "category": [
+        "teaching",
+        "office"
+      ],
+      "description": "快速录入学生考试成绩，自动计算平均分、排名、及格率。",
+      "tags": [
+        "成绩",
+        "录入",
+        "统计"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "涂鸦白板",
+      "file": "whiteboard.html",
+      "icon": "fa-paint-brush",
+      "gradient": "linear-gradient(135deg, #ec4899, #db2777)",
+      "category": [
+        "teaching"
+      ],
+      "description": "在线白板，支持画笔、形状、文字、橡皮擦，可保存截图。",
+      "tags": [
+        "白板",
+        "画板",
+        "教学"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "进度条生成器",
+      "file": "progress-bar.html",
+      "icon": "fa-tasks",
+      "gradient": "linear-gradient(135deg, #06b6d4, #0891b2)",
+      "category": [
+        "design",
+        "teaching"
+      ],
+      "description": "生成各种样式的进度条，支持自定义颜色、百分比、标签。",
+      "tags": [
+        "进度条",
+        "可视化",
+        "PPT"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "作业检查表",
+      "file": "homework-checklist.html",
+      "icon": "fa-clipboard-check",
+      "gradient": "linear-gradient(135deg, #10b981, #059669)",
+      "category": [
+        "teaching"
+      ],
+      "description": "创建作业提交检查表，一键标记已交/未交，支持Excel导入名单。",
+      "tags": [
+        "作业",
+        "检查",
+        "名单"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "教学反思记录",
+      "file": "teaching-reflection.html",
+      "icon": "fa-lightbulb",
+      "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
+      "category": [
+        "teaching",
+        "office"
+      ],
+      "description": "记录每日教学反思，支持标签分类、关键词搜索、导出Word。",
+      "tags": [
+        "反思",
+        "记录",
+        "教学"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "课堂观察表",
+      "file": "classroom-observation.html",
+      "icon": "fa-eye",
+      "gradient": "linear-gradient(135deg, #6366f1, #4f46e5)",
+      "category": [
+        "teaching"
+      ],
+      "description": "课堂观察记录表，记录学生参与度、互动情况、教学建议。",
+      "tags": [
+        "观察",
+        "记录",
+        "评估"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "阅读记录卡",
+      "file": "reading-log.html",
+      "icon": "fa-book-reader",
+      "gradient": "linear-gradient(135deg, #ec4899, #db2777)",
+      "category": [
+        "teaching"
+      ],
+      "description": "学生阅读记录卡，记录书名、页数、心得，生成阅读报告。",
+      "tags": [
+        "阅读",
+        "记录",
+        "读书"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "数学公式速查",
+      "file": "math-formula.html",
+      "icon": "fa-square-root-alt",
+      "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
+      "category": [
+        "math",
+        "teaching"
+      ],
+      "description": "小学数学常用公式速查表，支持分类筛选、一键复制。",
+      "tags": [
+        "数学",
+        "公式",
+        "速查"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "课堂投票器",
+      "file": "class-poll.html",
+      "icon": "fa-poll",
+      "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
+      "category": [
+        "teaching"
+      ],
+      "description": "快速创建课堂投票，支持单选/多选，实时显示结果柱状图。",
+      "tags": [
+        "投票",
+        "互动",
+        "课堂"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "时间线生成器",
+      "file": "timeline.html",
+      "icon": "fa-stream",
+      "gradient": "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+      "category": [
+        "teaching",
+        "design"
+      ],
+      "description": "创建历史事件/项目时间线，支持自定义样式，导出图片。",
+      "tags": [
+        "时间线",
+        "历史",
+        "项目"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "课堂签到表",
+      "file": "attendance-sheet.html",
+      "icon": "fa-clipboard-list",
+      "gradient": "linear-gradient(135deg, #10b981, #059669)",
+      "category": [
+        "teaching"
+      ],
+      "description": "课堂签到记录，支持一键全选/反选，导出Excel统计。",
+      "tags": [
+        "签到",
+        "考勤",
+        "记录"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "作业布置器",
+      "file": "homework-assigner.html",
+      "icon": "fa-tasks",
+      "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
+      "category": [
+        "teaching"
+      ],
+      "description": "快速布置作业，支持模板保存、一键复制作业内容发送。",
+      "tags": [
+        "作业",
+        "布置",
+        "模板"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "班级日志",
+      "file": "class-journal.html",
+      "icon": "fa-book",
+      "gradient": "linear-gradient(135deg, #6366f1, #4f46e5)",
+      "category": [
+        "teaching",
+        "office"
+      ],
+      "description": "记录班级每日大事、学生表现、教学内容，支持导出PDF。",
+      "tags": [
+        "日志",
+        "记录",
+        "班级"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "教学计划表",
+      "file": "teaching-plan.html",
+      "icon": "fa-calendar-alt",
+      "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
+      "category": [
+        "teaching",
+        "office"
+      ],
+      "description": "制定周/月教学计划，支持拖拽调整、导出打印。",
+      "tags": [
+        "计划",
+        "教学",
+        "排课"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "词云生成器",
+      "file": "word-cloud.html",
+      "icon": "fa-cloud",
+      "gradient": "linear-gradient(135deg, #ec4899, #8b5cf6)",
+      "category": [
+        "design",
+        "teaching"
+      ],
+      "description": "输入文字生成词云图片，支持自定义颜色、形状、字体大小。",
+      "tags": [
+        "词云",
+        "可视化",
+        "文字"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "条码生成器",
+      "file": "barcode-generator.html",
+      "icon": "fa-barcode",
+      "gradient": "linear-gradient(135deg, #64748b, #475569)",
+      "category": [
+        "office"
+      ],
+      "description": "生成各种条形码，支持EAN-13、Code128等格式，可批量生成。",
+      "tags": [
+        "条码",
+        "编码",
+        "打印"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "名牌生成器",
+      "file": "name-card.html",
+      "icon": "fa-id-card",
+      "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
+      "category": [
+        "teaching"
+      ],
+      "description": "生成学生座位名牌，支持批量导入名单、自定义样式、打印。",
+      "tags": [
+        "名牌",
+        "座位",
+        "打印"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "值日表生成器",
+      "file": "duty-schedule.html",
+      "icon": "fa-calendar-week",
+      "gradient": "linear-gradient(135deg, #10b981, #059669)",
+      "category": [
+        "teaching"
+      ],
+      "description": "生成班级值日表，支持轮换规则自定义、导出打印。",
+      "tags": [
+        "值日",
+        "排班",
+        "班级"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "成绩报告单",
+      "file": "report-card.html",
+      "icon": "fa-file-alt",
+      "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
+      "category": [
+        "teaching",
+        "office"
+      ],
+      "description": "生成学生成绩报告单，支持多科目、雷达图分析、批量导出PDF。",
+      "tags": [
+        "报告单",
+        "成绩",
+        "PDF"
+      ],
+      "proMode": "limited"
+    },
+    {
+      "name": "教学日历",
+      "file": "teaching-calendar.html",
+      "icon": "fa-calendar",
+      "gradient": "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+      "category": [
+        "teaching",
+        "office"
+      ],
+      "description": "教学专用日历，标记重要日期、考试安排、教学进度。",
+      "tags": [
+        "日历",
+        "教学",
+        "安排"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "学生档案卡",
+      "file": "student-profile.html",
+      "icon": "fa-user-graduate",
+      "gradient": "linear-gradient(135deg, #ec4899, #db2777)",
+      "category": [
+        "teaching"
+      ],
+      "description": "创建学生信息档案卡，记录基本信息、成绩、评语，可打印。",
+      "tags": [
+        "档案",
+        "学生",
+        "信息"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "课堂计分板",
+      "file": "scoreboard.html",
+      "icon": "fa-trophy",
+      "gradient": "linear-gradient(135deg, #f59e0b, #d97706)",
+      "category": [
+        "teaching"
+      ],
+      "description": "课堂小组竞赛计分板，支持多组同时计分、动画效果。",
+      "tags": [
+        "计分",
+        "竞赛",
+        "小组"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "拼音练习生成",
+      "file": "pinyin-practice.html",
+      "icon": "fa-language",
+      "gradient": "linear-gradient(135deg, #ef4444, #dc2626)",
+      "category": [
+        "teaching"
+      ],
+      "description": "生成拼音练习题，支持声调标注、拼音连线、填空练习。",
+      "tags": [
+        "拼音",
+        "语文",
+        "练习"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "乘法口诀表",
+      "file": "multiplication-table.html",
+      "icon": "fa-times",
+      "gradient": "linear-gradient(135deg, #3b82f6, #2563eb)",
+      "category": [
+        "math",
+        "teaching"
+      ],
+      "description": "交互式乘法口诀表，支持高亮、练习模式、计时挑战。",
+      "tags": [
+        "乘法",
+        "口诀",
+        "数学"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "课堂噪音监测",
+      "file": "noise-monitor.html",
+      "icon": "fa-volume-up",
+      "gradient": "linear-gradient(135deg, #10b981, #ef4444)",
+      "category": [
+        "teaching"
+      ],
+      "description": "课堂噪音实时监测，设置阈值提醒，帮助管理课堂纪律。",
+      "tags": [
+        "噪音",
+        "课堂",
+        "纪律"
+      ],
+      "proMode": "none"
+    },
+    {
+      "name": "随机题目生成",
+      "file": "random-question.html",
+      "icon": "fa-question-circle",
+      "gradient": "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+      "category": [
+        "teaching"
+      ],
+      "description": "从题库中随机抽取题目，支持分类、难度筛选，课堂互动利器。",
+      "tags": [
+        "随机",
+        "题目",
+        "互动"
+      ],
+      "proMode": "none"
     }
   ]
 }

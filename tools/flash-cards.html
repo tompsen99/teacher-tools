@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>单词卡片 | 教师工具站</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/icons.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/member.js"></script>
+  <script src="../assets/js/component.js"></script>
+  <style>
+    .workspace {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-5);
+    }
+    .tool-card {
+      background: var(--card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow);
+    }
+    .tool-header {
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+    .tool-header h2 {
+      font-size: 1.8rem;
+      margin-bottom: var(--space-2);
+    }
+    .tool-header p {
+      color: var(--text-light);
+    }
+    .input-area {
+      margin-bottom: var(--space-5);
+    }
+    .input-area textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: var(--space-4);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .input-area textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-5);
+    }
+    .btn {
+      padding: var(--space-2) var(--space-5);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .result-area {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      min-height: 200px;
+    }
+    .result-area h3 {
+      margin-bottom: var(--space-3);
+      color: var(--primary);
+    }
+    .result-content {
+      font-size: 1rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .stat-item {
+      background: var(--bg-secondary);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    .stat-item .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-item .label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: var(--space-1);
+    }
+    .list-area {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--primary-light);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .workspace { padding: var(--space-3); }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-navbar"></div>
+  <div class="workspace">
+    <div class="tool-card">
+      <div class="tool-header">
+        <h2><i class="fas fa-clone"></i> 单词卡片</h2>
+        <p> | 教师工具站</p>
+      </div>
+      
+      <div class="input-area">
+        <label>输入单词/知识点（每行一个，用 | 分隔正面|背面）</label>
+        <textarea id="cardInput" placeholder="apple|苹果
+dog|狗
+cat|猫">apple|苹果
+dog|狗
+cat|猫</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="loadCards()"><i class="fas fa-play"></i> 开始</button>
+        <button class="btn btn-secondary" onclick="flipCard()"><i class="fas fa-sync"></i> 翻转</button>
+        <button class="btn btn-secondary" onclick="nextCard()"><i class="fas fa-arrow-right"></i> 下一张</button>
+      </div>
+      <div class="result-area" style="text-align:center;min-height:300px;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="flipCard()">
+        <div>
+          <div id="cardFront" style="font-size:3rem;font-weight:700;margin-bottom:1rem">点击开始</div>
+          <div id="cardBack" style="font-size:1.5rem;color:var(--text-light);display:none"></div>
+          <div id="cardProgress" style="margin-top:1rem;color:var(--text-light)"></div>
+        </div>
+      </div>
+      <script>
+        let cards=[],current=0,showingFront=true;
+        function loadCards(){
+          const lines=document.getElementById('cardInput').value.trim().split('\n');
+          cards=lines.map(l=>{const p=l.split('|');return{front:p[0].trim(),back:(p[1]||'').trim()}});
+          current=0;showingFront=true;showCard();
+        }
+        function showCard(){
+          if(!cards.length)return;
+          const c=cards[current];
+          document.getElementById('cardFront').textContent=showingFront?c.front:'';
+          document.getElementById('cardFront').style.display=showingFront?'block':'none';
+          document.getElementById('cardBack').textContent=showingFront?'':c.back;
+          document.getElementById('cardBack').style.display=showingFront?'none':'block';
+          document.getElementById('cardProgress').textContent=(current+1)+'/'+cards.length;
+        }
+        function flipCard(){showingFront=!showingFront;showCard();}
+        function nextCard(){current=(current+1)%cards.length;showingFront=true;showCard();}
+      </script>
+    </div>
+  </div>
+  <div id="app-footer"></div>
+  <div id="app-modal"></div>
+  <script>
+    PageComponents.initPage({ title: '单词卡片', icon: 'fa-clone' });
+  </script>
+</body>
+</html>

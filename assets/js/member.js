@@ -65,7 +65,7 @@ class MemberManager {
   async checkStatus() {
     if (!this.token) {
       this.isPro = false;
-      return { isPro: false, type: 'free' };
+      return { isPro: false, type: 'free', reason: 'no_token' };
     }
 
     try {
@@ -77,6 +77,7 @@ class MemberManager {
       });
 
       const data = await response.json();
+      console.log('[Member] check response:', data);
 
       if (data.success && data.member) {
         this.memberData = data.member;
@@ -94,10 +95,15 @@ class MemberManager {
           expiry: data.member.expiry
         };
       } else {
-        this.clearLocal();
-        return { isPro: false, type: 'free' };
+        // Token 无效或会员不存在
+        console.warn('[Member] check failed:', data.error, data.code);
+        if (data.code === 'INVALID_TOKEN' || data.code === 'BAD_PAYLOAD') {
+          this.clearLocal();
+        }
+        return { isPro: false, type: 'free', reason: data.code || 'no_member' };
       }
     } catch (e) {
+      console.error('[Member] check error:', e);
       // 离线时使用缓存的过期时间
       if (this.memberData && this.memberData.expiry) {
         const now = Date.now();

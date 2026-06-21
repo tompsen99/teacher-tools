@@ -92,9 +92,8 @@ async function verifyToken(token, secret) {
 function generateDeviceId(request) {
   const ua = request.headers.get('User-Agent') || '';
   const ip = request.headers.get('CF-Connecting-IP') || '';
-  const raw = `${ua}:${ip}:${Date.now()}`;
-
-  // 简单哈希
+  const raw = `${ua}:${ip}`;
+  // 简单哈希（不含时间戳，同一浏览器+IP 生成相同 ID）
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     const char = raw.charCodeAt(i);
@@ -311,14 +310,18 @@ async function handleActivate(request, env, jwtSecret, json) {
 async function handleCheck(request, env, jwtSecret, json) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return json({ success: false, error: '未提供认证信息' });
+    return json({ success: false, error: '未提供认证信息', code: 'NO_TOKEN' });
   }
 
   const token = authHeader.substring(7);
   const payload = await verifyToken(token, jwtSecret);
 
   if (!payload) {
-    return json({ success: false, error: 'Token 无效或已过期' });
+    return json({ success: false, error: 'Token 无效或已过期', code: 'INVALID_TOKEN' });
+  }
+
+  if (!payload.deviceId) {
+    return json({ success: false, error: 'Token 格式错误', code: 'BAD_PAYLOAD' });
   }
 
   const db = env.DB;
@@ -327,7 +330,7 @@ async function handleCheck(request, env, jwtSecret, json) {
   ).bind(payload.deviceId).first();
 
   if (!member) {
-    return json({ success: true, member: null });
+    return json({ success: true, member: null, deviceId: payload.deviceId });
   }
 
   const now = new Date();
